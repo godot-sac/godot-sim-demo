@@ -68,7 +68,7 @@ def main() -> int:
               file=sys.stderr)
         problems += 1
     if args.godot:
-        print("importing the project ...")
+        print("importing the project ...", flush=True)
         subprocess.run([str(args.godot), "--headless", "--path", str(root), "--import"], check=False)
     else:
         print("Run once so Godot registers the classes: <godot> --headless --path . --import")

@@ -7,7 +7,7 @@ DIS traffic is recorded and played back.
 
 > **Status:** in development, not released yet. It follows the add-ons' v0.1.0 work.
 
-![Showcase: UAV over the terrain south-east of Ankara, viewshed of the air defence post, tactical map](docs/images/showcase.jpg)
+![Showcase: the UAV flies into the air defence post's view, the tactical map, the recording played back](docs/images/showcase.gif)
 
 <sub>Contains modified Copernicus Sentinel data 2025. Elevation produced using Copernicus WorldDEM-30 © DLR e.V.
 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all
@@ -27,33 +27,25 @@ rights reserved.</sub>
 ![Playback of a recording](docs/images/playback.jpg)
 
 ## Requirements
-- Godot 4.7.x (Windows or Linux; desktop, Forward+ renderer).
-- The four add-ons, built for your platform: godot-dis, godot-geo, godot-jsbsim, godot-milsymbol (v0.1.0 or their
-  current `main`).
-- The Ankara terrain package from godot-geo (`terrain/ankara_60km`, about 90 MB; `terrain/ankara` (40 km) also works).
-- For the development setup: Python 3.8+ (only for `tools/link_addons.py`).
+- Godot 4.7.x (Windows or Linux x86-64; desktop, Forward+ renderer). Tested with 4.7.2 on Windows 11 and Ubuntu 24.04.
+- The four add-ons: godot-dis, godot-geo, godot-jsbsim, godot-milsymbol (v0.1.0, pinned in `addons.json`).
+- The Ankara terrain package from the godot-geo release (`terrain/ankara_60km`, about 90 MB).
+- Python 3.8+ for the setup scripts (standard library only), or unpack the release zips by hand.
 
 ## Installation
-The add-ons and the terrain are not in this repository; the project expects them at:
-
-```
-addons/dis/          addons/geo/          addons/jsbsim/          addons/milsymbol/
-terrain/ankara_60km/ (terrain.json, height.exr, color.png)
-```
-
-**From release archives** (once the add-ons are released): unpack each add-on's release zip into `addons/` and the
-terrain package into `terrain/`.
-
-**From the sibling repositories** (development): clone the four repositories next to this one, build godot-dis and
-godot-jsbsim as their `docs/building.md` describes, build the terrain package in godot-geo
-(`docs/demo-3d.md` there), then link everything in:
+The add-ons and the terrain are not in this repository. [docs/getting-started.md](docs/getting-started.md) walks
+through the whole setup; in short:
 
 ```sh
-python tools/link_addons.py --godot <path to the Godot executable>
+git clone https://github.com/OWNER/godot-sim-demo.git
+cd godot-sim-demo
+python tools/fetch_addons.py --godot <path to the Godot executable>
 ```
 
-It creates directory junctions (Windows) or symbolic links to the sibling folders, reports what is missing, and
-imports the project once.
+`tools/fetch_addons.py` downloads the add-ons' release zips and the terrain package pinned in `addons.json`, unpacks
+them into `addons/` and `terrain/` and imports the project once. To work on the add-ons themselves, link the sibling
+repositories instead with `tools/link_addons.py`. Both ways, and why the add-ons are not git submodules:
+[docs/addons.md](docs/addons.md).
 
 ## Usage
 ```sh
@@ -82,6 +74,8 @@ Command line options (after `--`):
 | `--record FILE`, `--replay FILE` | record from the start; open a recording in playback mode |
 | `--viewshed` | start with the viewshed on |
 | `--seconds N`, `--screenshot FILE` | quit after N game seconds (in playback: recording seconds), save a screenshot first |
+| `--tour` | press the keys of a 44 s tour by itself (fast-forward, viewshed, map, view from the post, playback) |
+| `--capture DIR` | with `--tour`: save the screen as PNG frames and quit at the end ([docs/media.md](docs/media.md)) |
 | `--check N`, `--report FILE` | self-test, see below |
 
 The demo joins DIS exercise 1 on multicast 239.1.2.3 like the add-ons' own demos, so with the same `--port` the
@@ -94,6 +88,10 @@ godot-dis 2D demo shows the UAV and the units, and their entities appear here on
   your own scenario.
 
 ## Documentation
+- [docs/getting-started.md](docs/getting-started.md): from a clean machine to the running showcase.
+- [docs/addons.md](docs/addons.md): where the add-ons come from (release zips or sibling repositories).
+- [docs/media.md](docs/media.md): how the animation and the social preview image are made.
+
 Each add-on documents its own API: godot-dis (`docs/entities.md`, `docs/recording.md`), godot-geo
 (`docs/geo-terrain.md`), godot-jsbsim (`docs/autopilot.md`), godot-milsymbol (`docs/tactical-map.md`).
 

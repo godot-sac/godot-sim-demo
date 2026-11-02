@@ -1,0 +1,12 @@
+{
+  "comment": "Add-on and terrain releases this demo is tested with; tools/fetch_addons.py downloads and unpacks them. URL: https://github.com/<owner>/<repo>/releases/download/v<version>/<asset>. sha256 is filled in when the releases exist.",
+  "owner": "OWNER",
+  "godot": "4.7.2",
+  "packages": [
+    {"repo": "godot-dis", "version": "0.1.0", "asset": "godot-dis-0.1.0.zip", "path": "addons/dis", "sha256": null},
+    {"repo": "godot-geo", "version": "0.1.0", "asset": "godot-geo-0.1.0.zip", "path": "addons/geo", "sha256": null},
+    {"repo": "godot-jsbsim", "version": "0.1.0", "asset": "godot-jsbsim-0.1.0.zip", "path": "addons/jsbsim", "sha256": null},
+    {"repo": "godot-milsymbol", "version": "0.1.0", "asset": "godot-milsymbol-0.1.0.zip", "path": "addons/milsymbol", "sha256": null},
+    {"repo": "godot-geo", "version": "0.1.0", "asset": "ankara_60km.zip", "path": "terrain/ankara_60km", "sha256": null}
+  ]
+}

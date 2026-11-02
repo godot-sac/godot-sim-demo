@@ -21,3 +21,6 @@ addons/geo
 addons/jsbsim
 addons/milsymbol
 terrain
+
+# Release zips downloaded by tools/fetch_addons.py
+.cache/

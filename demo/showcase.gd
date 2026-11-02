@@ -16,6 +16,10 @@ extends Node3D
 ##   --viewshed          start with the viewshed overlay on
 ##   --seconds N         quit after N game seconds
 ##   --screenshot FILE   save a PNG before quitting (needs a window)
+##   --tour              press the keys of a short tour by itself (viewshed, map, units, recording, playback) and
+##                       turn the camera slowly; for unattended screens and for recording the README animation
+##   --capture DIR       with --tour: save the screen as PNG frames (DIR/f00000000.png ...) at 15 per second of
+##                       wall-clock time and quit at the end of the tour (input of tools/make_media.py)
 ##   --check N           self-test: run N game seconds, record, play the recording back, check, report, exit code
 ##   --report FILE       JSON report of --check (default user://showcase_check.json)
 
@@ -25,6 +29,17 @@ const SUN_ELEVATION := 28.0
 const SUN_AZIMUTH := 220.0
 const TRAIL_INTERVAL := 2.0
 const REPLAY_SPEEDS := [0.25, 0.5, 1.0, 2.0, 4.0, 8.0, 16.0, 32.0]
+## --tour: [seconds after the start (wall clock), key, shift]. Fast-forwards the first four minutes of the route at
+## 16×, then at 4× (from 15.5 s on, about 28 s): the UAV comes into the air defence post's view, the large map, the
+## view from the post, the recording played back.
+const TOUR := [[0.2, KEY_V], [0.4, KEY_BRACKETRIGHT], [0.5, KEY_BRACKETRIGHT], [0.6, KEY_BRACKETRIGHT],
+		[0.7, KEY_BRACKETRIGHT], [15.3, KEY_BRACKETLEFT], [15.4, KEY_BRACKETLEFT], [15.5, KEY_R], [27.5, KEY_M],
+		[33.5, KEY_M], [33.6, KEY_TAB, true], [38.5, KEY_P], [38.7, KEY_UP], [38.8, KEY_UP]]
+const TOUR_TURN := 0.06  # rad/s of camera orbit during the tour
+const TOUR_END := 44.0
+## Frames per second of --capture. Real time, not Godot's Movie Maker mode: Movie Maker slows the game down against
+## the wall clock that DIS timestamps, dead reckoning and the recorder use, so playback would look wrong.
+const CAPTURE_FPS := 15.0
 const HELP := """Tab / Shift+Tab   camera on next / previous unit (UAV first)
 Left drag         orbit                      Wheel   zoom
 [  ]              simulation slower / faster
@@ -33,7 +48,8 @@ M                 large / small map          (map: drag pans, wheel zooms)
 R                 start / stop recording DIS traffic (%s)
 P                 playback of the last recording / back to live
   in playback:    Space play / pause, Left / Right 10 s, Up / Down speed, Home start
-F12               screenshot                 F1      this help        Esc   quit"""
+F12               screenshot                 F1      this help        Esc   quit
+user:// is Godot's user data folder of this project; the console prints the full paths."""
 
 @onready var origin: DisGeoOrigin = $DisGeoOrigin
 @onready var terrain: GeoTerrain = $GeoTerrain
@@ -72,6 +88,11 @@ var _quit_at := -1.0
 var _type_cache := {}
 var _replay_ids := {}  # entity id -> map id of replayed entities
 var _check: ShowcaseCheck
+var _tour_clock := -1.0  # seconds since the start of --tour; -1 without it
+var _tour_step := 0
+var _capture_dir := ""
+var _capture_frame := 0
+var _capture_tasks := PackedInt64Array()
 
 
 func _ready() -> void:
@@ -89,12 +110,13 @@ func _ready() -> void:
 	manager.ground_path = manager.get_path_to(terrain)
 	replay_manager.ground_path = replay_manager.get_path_to(terrain)
 	manager.entity_appeared.connect(_on_remote_appeared)
-	manager.entity_removed.connect(func(entity: Node) -> void: map.remove_unit(_remote_id(entity)))
+	manager.entity_removed.connect(func(entity: Node, _reason: String) -> void:
+			map.remove_unit(_remote_id(entity)))
 	replay_manager.entity_appeared.connect(_on_replay_appeared)
 	replay_manager.entity_removed.connect(_on_replay_removed)
 	player.finished.connect(func() -> void: _say("End of recording"))
 	recorder.stopped.connect(func(path: String, count: int) -> void:
-			_say("Recorded %d packets to %s" % [count, ProjectSettings.globalize_path(path)]))
+			_say("Recorded %d packets to %s" % [count, path], path))
 
 	map = ShowcaseMap.new()
 	$HUD.add_child(map)
@@ -108,7 +130,7 @@ func _ready() -> void:
 	_update_map()
 	map.map.zoom_to_content.call_deferred(20.0)  # once the panel has its size
 
-	$HUD/Help.text = HELP % ProjectSettings.globalize_path(DEFAULT_RECORDING)
+	$HUD/Help.text = HELP % DEFAULT_RECORDING
 	$HUD/Attribution.text = "\n".join(terrain.attribution()) + "\nDIS enumerations: SISO-REF-010, reprinted with " \
 			+ "permission from SISO Inc.  Symbols: MIL-STD-2525D (godot-milsymbol, after milsymbol).  Flight model: " \
 			+ "JSBSim J3Cub (LGPL-2.1) standing in for a UAV."
@@ -133,6 +155,11 @@ func _ready() -> void:
 		_quit_at = float(_options.seconds)
 	if _check:
 		_check.start()
+	if _options.has("tour"):
+		_tour_clock = 0.0
+		if _options.has("capture"):
+			_capture_dir = str(_options.capture)
+			DirAccess.make_dir_recursive_absolute(_capture_dir)
 	get_window().title = "godot-sim-demo — UAV, DIS, terrain, tactical map"
 	print("showcase: terrain %s, DIS 239.1.2.3:%d exercise 1 site %d, route %d waypoints, highest %.0f m (ellipsoid)" % [
 			terrain.package_path, port, network.site_id, route.size(), route_height])
@@ -323,9 +350,11 @@ func _physics_process(delta: float) -> void:
 		_check.step(delta)
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if map == null:
 		return
+	if _tour_clock >= 0.0:
+		_advance_tour(delta)
 	if replaying and _quit_at >= 0.0 and player.get_position() >= minf(_quit_at, player.get_duration() - 0.1):
 		_quit_at = -1.0  # --seconds in playback: seconds of the recording
 		_finish(0)
@@ -361,7 +390,7 @@ func _update_hud() -> void:
 	if replaying:
 		lines.append("PLAYBACK  %s / %s  ×%s  %s" % [_clock(player.get_position()), _clock(player.get_duration()),
 				player.speed, "playing" if player.is_playing() else "paused"])
-		lines.append("Recording: %s" % ProjectSettings.globalize_path(recording_path))
+		lines.append("Recording: %s" % recording_path)
 		lines.append("Replayed entities: %d (translucent)" % replay_manager.get_entity_count())
 	else:
 		var fdm := aircraft.get_fdm()
@@ -450,9 +479,45 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_tree().quit()
 
 
+func _advance_tour(delta: float) -> void:
+	_tour_clock += delta
+	if _capture_dir != "":
+		_capture()
+		if _tour_clock >= TOUR_END:
+			_tour_clock = -1.0
+			_finish(0)
+			return
+	camera.yaw += TOUR_TURN * delta
+	while _tour_step < TOUR.size() and _tour_clock >= TOUR[_tour_step][0]:
+		var key := InputEventKey.new()
+		key.physical_keycode = TOUR[_tour_step][1]
+		key.keycode = key.physical_keycode
+		key.shift_pressed = TOUR[_tour_step].size() > 2 and TOUR[_tour_step][2]
+		key.pressed = true
+		Input.parse_input_event(key)
+		_tour_step += 1
+
+
+## Saves the last drawn frame for every frame slot that has passed (a slow frame fills several slots), so the
+## frames keep wall-clock time. PNG encoding runs on worker threads.
+func _capture() -> void:
+	var image: Image = null
+	while _capture_frame < _tour_clock * CAPTURE_FPS:
+		if image == null:
+			image = get_viewport().get_texture().get_image()
+		var path := _capture_dir.path_join("f%08d.png" % _capture_frame)
+		# The bound arguments keep the image alive until the task has run (a Callable on image.save_png would not).
+		_capture_tasks.append(WorkerThreadPool.add_task(_save_frame.bind(image, path)))
+		_capture_frame += 1
+
+
+static func _save_frame(image: Image, path: String) -> void:
+	image.save_png(path)
+
+
 func _start_recording() -> void:
 	if recorder.start(recording_path) == OK:
-		_say("Recording DIS traffic to " + ProjectSettings.globalize_path(recording_path))
+		_say("Recording DIS traffic to " + recording_path, recording_path)
 	else:
 		_say("Cannot record to " + recording_path)
 
@@ -528,7 +593,7 @@ func _on_replay_appeared(entity: DisRemoteEntity) -> void:
 			camera.target = entity
 
 
-func _on_replay_removed(entity: Node) -> void:
+func _on_replay_removed(entity: Node, _reason: String) -> void:
 	var remote := entity as DisRemoteEntity
 	if remote and _replay_ids.has(remote.get_entity_id()):
 		map.remove_unit(_replay_ids[remote.get_entity_id()])
@@ -565,8 +630,11 @@ func _own_entities() -> Array[DisEntity]:
 	return result
 
 
-func _say(text: String) -> void:
-	print(text)
+## Shows a message for a few seconds. The screen shows Godot paths (user://...), which keeps screenshots and
+## recordings of the screen free of local folder names; the console also gets the full path of `path`.
+func _say(text: String, path := "") -> void:
+	var full := ProjectSettings.globalize_path(path)
+	print(text + ("" if full == path else " (%s)" % full))
 	_message = text
 	_message_until = _now() + 4.0
 
@@ -582,12 +650,16 @@ static func _clock(seconds: float) -> String:
 func _screenshot(path: String) -> void:
 	await RenderingServer.frame_post_draw
 	var error := get_viewport().get_texture().get_image().save_png(path)
-	_say("Screenshot %s (%s)" % [ProjectSettings.globalize_path(path), error_string(error)])
+	_say("Screenshot %s (%s)" % [path, error_string(error)], path)
 
 
 func _finish(code: int) -> void:
 	if recorder.is_recording():
 		recorder.stop()
+	for task in _capture_tasks:
+		WorkerThreadPool.wait_for_task_completion(task)
+	if _capture_dir != "":
+		print("captured %d frames to %s" % [_capture_frame, _capture_dir])
 	if _options.has("screenshot"):
 		await _screenshot(str(_options.screenshot))
 	get_tree().quit(code)

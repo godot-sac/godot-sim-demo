@@ -1,0 +1,111 @@
+# Getting started
+
+From nothing to the running showcase in about 15 minutes: install Godot, clone this repository, let one script
+download the four add-ons and the terrain, open the scene. Most of the time goes into downloads (Godot ~70 MB, the
+add-ons and terrain ~100 MB).
+
+![The showcase after start-up](images/showcase.jpg)
+
+## What you need
+- **Windows 10/11 or Linux** (x86-64) with a GPU that runs Vulkan (the Forward+ renderer). macOS is not tested yet.
+- **Godot 4.7.2**, the standard build (not .NET). Download it from
+  [godotengine.org/download/archive/4.7.2-stable](https://godotengine.org/download/archive/4.7.2-stable/) and unzip
+  it anywhere. Godot is a single executable; no installer.
+- **git** and **Python 3.8 or newer** (only the standard library is used).
+- About 400 MB of disk space.
+
+On Linux, from a terminal:
+```sh
+mkdir -p ~/godot && cd ~/godot
+curl -LO https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip
+unzip Godot_v4.7.2-stable_linux.x86_64.zip && chmod +x Godot_v4.7.2-stable_linux.x86_64
+cd ~
+```
+On Windows, download `Godot_v4.7.2-stable_win64.exe.zip` from the same release page and unzip it, for example to
+`C:\godot`.
+
+In the commands below, replace `<godot>` with the full path of the Godot executable, for example
+`~/godot/Godot_v4.7.2-stable_linux.x86_64` or `C:\godot\Godot_v4.7.2-stable_win64_console.exe` (on Windows use the
+`_console` one for command line runs: it shows the output).
+
+## 1. Clone
+```sh
+git clone https://github.com/OWNER/godot-sim-demo.git
+cd godot-sim-demo
+```
+
+## 2. Get the add-ons and the terrain
+```sh
+python3 tools/fetch_addons.py --godot <godot>
+```
+On Windows the Python command is usually `py` instead of `python3`.
+
+The script downloads five release files (pinned in `addons.json`), unpacks them into `addons/` and `terrain/`, and
+imports the project once so Godot registers the add-ons. It ends with Godot's import output; a few lines about
+importing files are normal. Run it again if a download breaks off; finished downloads are kept in `.cache/`.
+[addons.md](addons.md) explains the files and how to get them without the script.
+
+Check that everything is in place:
+```
+addons/dis  addons/geo  addons/jsbsim  addons/milsymbol  terrain/ankara_60km/terrain.json
+```
+
+## 3. Run
+```sh
+<godot> --path .
+```
+A 1600 × 900 window opens over the hills south-east of Ankara: a small UAV flying a loop of six waypoints, ground
+units of two sides on the terrain, and a tactical map in the lower right corner. The line from the red air defence
+post to the UAV is red while the post can see it and yellow while the terrain hides it. The data attributions are at
+the bottom left.
+
+Things to try:
+
+| Key | |
+|---|---|
+| `]` (a few times) | speed the simulation up to 16× |
+| Tab | camera on the next unit; left drag orbits, the wheel zooms |
+| V | viewshed: the area the air defence post can see at the UAV's height above ground (red on the terrain and the map) |
+| M | large map; drag to pan, wheel to zoom |
+| R, then R again after a minute | record the DIS traffic |
+| P | play the recording back (translucent units); Space, Left / Right, Up / Down; P again returns to live |
+| F1 | all keys |
+
+If the window shows "godot-sim-demo cannot start" instead, it lists what is missing; see Troubleshooting below.
+
+## 4. Check the installation (optional)
+The self-test flies the route at 8× for 480 game seconds without a window (about a minute and a half), records and
+replays the DIS traffic, and checks every add-on's part:
+```sh
+<godot> --headless --path . -- --check 480
+```
+The last line starts with `SHOWCASE_CHECK ok` and the exit code is 0 when all checks pass.
+
+## 5. See it on the DIS network (optional)
+The demo publishes the UAV and the ground units as DIS Entity State PDUs on multicast `239.1.2.3`, port 3000,
+exercise 1. Wireshark (filter `dis`) shows them, and any DIS tool on the same port and exercise sees the entities.
+`--port N` changes the port; `--record file.pcapng` records from the start.
+
+## Troubleshooting
+- **"godot-sim-demo cannot start: ... is missing"**: the add-on or terrain folder is not there. Run step 2 again and
+  look at its output; a folder that already exists is skipped (add `--force` to unpack again).
+- **"... is present but its library did not load"**: the C++ add-on has no library for your platform or the import
+  did not run. Run `<godot> --headless --path . --import` once. On Linux, `ldd addons/jsbsim/bin/linux/*.so` shows
+  missing system libraries.
+- **Script errors about unknown classes (`DisNetwork`, `JSBSimAircraft`, `GeoTerrain`)** on the first run: the
+  project was opened before the import; run `<godot> --headless --path . --import` once.
+- **Black window or Vulkan errors**: update the GPU driver. As a test, `<godot> --path . --rendering-driver opengl3`
+  starts with OpenGL (slower, but it shows whether the problem is the driver).
+- **Messages about `libasound` / `libpulse` and "All audio drivers failed"** (Linux): no sound system; harmless, the
+  demo has no sound.
+- **WSL 2:** it runs under WSLg, usually with software rendering (`llvmpipe` in the first lines of the output), so
+  slowly; the self-test is not affected.
+- **Windows firewall prompt** on the first start: DIS uses UDP; allowing private networks is enough for the demo.
+- **No DIS traffic in other tools**: they must use the same port and exercise; on some networks multicast is
+  blocked, the demo itself works without it.
+
+## Next steps
+- [README](../README.md): what each add-on contributes, all keys and command line options.
+- `demo/scenario.gd`: units, route and control measures; change them and run again.
+- The add-ons' own documentation: godot-dis, godot-geo, godot-jsbsim and godot-milsymbol each have a `docs/` folder.
+- [addons.md](addons.md): working on an add-on and seeing the change here (sibling repositories).
