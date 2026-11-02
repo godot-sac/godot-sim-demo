@@ -12,7 +12,7 @@ add-ons and terrain ~100 MB).
   [godotengine.org/download/archive/4.7.2-stable](https://godotengine.org/download/archive/4.7.2-stable/) and unzip
   it anywhere. Godot is a single executable; no installer.
 - **git** and **Python 3.8 or newer** (only the standard library is used).
-- About 400 MB of disk space.
+- About 550 MB of disk space (the Godot zip and the download cache `.cache/` can be deleted afterwards).
 
 On Linux, from a terminal:
 ```sh
@@ -29,6 +29,7 @@ In the commands below, replace `<godot>` with the full path of the Godot executa
 `_console` one for command line runs: it shows the output).
 
 ## 1. Clone
+In a terminal, go to the folder that should hold the project, then:
 ```sh
 git clone https://github.com/OWNER/godot-sim-demo.git
 cd godot-sim-demo
@@ -41,23 +42,33 @@ python3 tools/fetch_addons.py --godot <godot>
 On Windows the Python command is usually `py` instead of `python3`.
 
 The script downloads five release files (pinned in `addons.json`), unpacks them into `addons/` and `terrain/`, and
-imports the project once so Godot registers the add-ons. It ends with Godot's import output; a few lines about
-importing files are normal. Run it again if a download breaks off; finished downloads are kept in `.cache/`.
-[addons.md](addons.md) explains the files and how to get them without the script.
+prints one line per file, for example `addons/dis <- godot-dis 0.1.0 godot-dis-0.1.0.zip`. Then it imports the
+project once so Godot registers the add-ons: about a hundred lines of Godot's own progress output follow
+(`first_scan_filesystem`, `update_scripts_classes`, `reimport`, `loading_editor_layout`, ...). No window opens. The
+script's last line is `fetch_addons: done, 5 of 5 packages in place`. If a download breaks off, run it again;
+finished downloads are kept in `.cache/`. [addons.md](addons.md) explains the files and how to get them without the
+script.
 
-Check that everything is in place:
-```
-addons/dis  addons/geo  addons/jsbsim  addons/milsymbol  terrain/ankara_60km/terrain.json
+Check that everything is in place (Linux; on Windows `dir addons terrainnkara_60km`):
+```sh
+ls -d addons/dis addons/geo addons/jsbsim addons/milsymbol terrain/ankara_60km/terrain.json
 ```
 
 ## 3. Run
 ```sh
 <godot> --path .
 ```
-A 1600 × 900 window opens over the hills south-east of Ankara: a small UAV flying a loop of six waypoints, ground
-units of two sides on the terrain, and a tactical map in the lower right corner. The line from the red air defence
-post to the UAV is red while the post can see it and yellow while the terrain hides it. The data attributions are at
-the bottom left.
+A 1600 × 900 window opens over the south-eastern edge of Ankara: a small UAV flying a loop of six waypoints, ground
+units of two sides on the terrain, and a tactical map in the lower right corner. The red air defence post (R-AD on
+the map) watches the UAV: its line of sight is red while it can see the UAV, and yellow up to the hiding terrain (then
+dashed on the map) while the terrain masks it. For the first four minutes the UAV is out of view and the post is
+15 km away, so the line shows on the map and in the `R-AD → UAV` line of the text at the top left; press `]` a few
+times to get there sooner. The data attributions are at the bottom left.
+
+The demo publishes its units on the network from the start (DIS on UDP multicast `239.1.2.3`, port 3000); step 5
+says more. On Linux, the console lines about `libasound` / `libpulse` and "All audio drivers failed" are harmless (no
+sound system; the demo has no sound). Under WSL the picture is drawn in software and runs slowly; see
+Troubleshooting.
 
 Things to try:
 
@@ -65,7 +76,7 @@ Things to try:
 |---|---|
 | `]` (a few times) | speed the simulation up to 16× |
 | Tab | camera on the next unit; left drag orbits, the wheel zooms |
-| V | viewshed: the area the air defence post can see at the UAV's height above ground (red on the terrain and the map) |
+| V | viewshed: what the air defence post can see at the UAV's height above ground (green: in view, red: hidden; on the terrain and the map) |
 | M | large map; drag to pan, wheel to zoom |
 | R, then R again after a minute | record the DIS traffic |
 | P | play the recording back (translucent units); Space, Left / Right, Up / Down; P again returns to live |
@@ -84,7 +95,9 @@ The last line starts with `SHOWCASE_CHECK ok` and the exit code is 0 when all ch
 ## 5. See it on the DIS network (optional)
 The demo publishes the UAV and the ground units as DIS Entity State PDUs on multicast `239.1.2.3`, port 3000,
 exercise 1. Wireshark (filter `dis`) shows them, and any DIS tool on the same port and exercise sees the entities.
-`--port N` changes the port; `--record file.pcapng` records from the start.
+Options of the demo come after `--` on the command line, for example
+`<godot> --path . -- --port 3001 --record run.pcapng` (another port; record from the start). The README lists all
+options.
 
 ## Troubleshooting
 - **"godot-sim-demo cannot start: ... is missing"**: the add-on or terrain folder is not there. Run step 2 again and

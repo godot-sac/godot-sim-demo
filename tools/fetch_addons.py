@@ -133,6 +133,9 @@ def main() -> int:
         subprocess.run([str(args.godot), "--headless", "--path", str(ROOT), "--import"], check=False)
     elif not problems:
         print("Run once so Godot registers the classes: <godot> --headless --path . --import")
+    total = len(config["packages"])
+    print(f"fetch_addons: done, {total - problems} of {total} packages in place"
+          + (f"; {problems} failed (see above)" if problems else ""))
     return 1 if problems else 0
 
 
