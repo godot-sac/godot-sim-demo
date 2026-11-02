@@ -2,7 +2,7 @@
 
 1. Record the tour as PNG frames (needs a window; 44 s, 1-2 GB of frames; see docs/media.md):
        godot --path . -- --tour --capture <frames> --port 3291
-2. python tools/make_media.py <frames> [--start 15.5 --end 43.5] [--width 480 --fps 8 --colors 64] [--preview-at 26.5]
+2. python tools/make_media.py <frames> [--start 15.5 --end 43.5] [--width 440 --fps 6 --colors 48] [--preview-at 37.3]
    writes docs/images/showcase.gif and docs/images/social-preview.png (1280 x 640, for the repository settings).
 
 Needs Pillow (pip install Pillow); it is a maintainer tool, the demo itself does not use Python.
@@ -15,8 +15,13 @@ from PIL import Image, ImageDraw, ImageFont
 ROOT = Path(__file__).resolve().parent.parent
 TITLE = "godot-sim-demo"
 SUBTITLE = "Flight dynamics, DIS, terrain and MIL-STD-2525D symbols in Godot 4"
-ATTRIBUTION = ("Contains modified Copernicus Sentinel data 2025. Elevation: Copernicus WorldDEM-30 © DLR e.V. 2010-2014 "
-               "and © Airbus Defence and Space GmbH 2014-2018, provided under COPERNICUS by the EU and ESA.")
+# The terrain package's notices (terrain.json "attribution"), shortened to two lines for the image.
+ATTRIBUTION = [
+    "© OpenStreetMap contributors, Overture Maps Foundation (ODbL 1.0). Contains modified Copernicus Sentinel data 2025. "
+    "Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018,",
+    "provided under COPERNICUS by the EU and ESA. Land cover © ESA WorldCover project 2021 (CC BY 4.0). Canopy height: "
+    "ETH Global Canopy Height 2020, Lang et al. 2023 (CC BY 4.0). Building heights: GHS-BUILT-H R2023A, EC JRC (CC BY 4.0).",
+]
 
 
 def frame(frames: Path, rate: float, seconds: float) -> Image.Image:
@@ -60,8 +65,10 @@ def make_preview(frames: Path, rate: float, at: float, out: Path) -> None:
     draw.rectangle((0, 0, 1280, 130), fill=(16, 20, 28, 255))  # also hides the HUD text
     draw.text((40, 22), TITLE, font=font(52), fill=(255, 255, 255))
     draw.text((42, 84), SUBTITLE, font=font(24), fill=(200, 210, 225))
-    draw.rectangle((0, 616, 1280, 640), fill=(16, 20, 28, 200))
-    draw.text((12, 621), ATTRIBUTION, font=font(12), fill=(220, 220, 220))
+    # The scene's own attribution text would be cut off by the crop: cover it with the shortened notices.
+    draw.rectangle((0, 548, 1280, 640), fill=(16, 20, 28, 255))
+    for i, line in enumerate(ATTRIBUTION):
+        draw.text((12, 574 + 20 * i), line, font=font(11), fill=(225, 225, 225))
     im.save(out, optimize=True)
     print(f"{out.name}: {im.width} x {im.height}, {out.stat().st_size / 1e3:.0f} kB")
 
@@ -72,10 +79,10 @@ def main() -> None:
     parser.add_argument("--rate", type=float, default=15.0, help="frames per second of the capture")
     parser.add_argument("--start", type=float, default=15.5, help="first second of the animation")
     parser.add_argument("--end", type=float, default=43.5, help="last second of the animation")
-    parser.add_argument("--width", type=int, default=480)
-    parser.add_argument("--fps", type=int, default=8)
-    parser.add_argument("--colors", type=int, default=64)
-    parser.add_argument("--preview-at", type=float, default=26.5, help="second of the social preview frame")
+    parser.add_argument("--width", type=int, default=440)
+    parser.add_argument("--fps", type=int, default=6)
+    parser.add_argument("--colors", type=int, default=48)
+    parser.add_argument("--preview-at", type=float, default=37.3, help="second of the social preview frame")
     parser.add_argument("--out", type=Path, default=ROOT / "docs" / "images")
     args = parser.parse_args()
     make_gif(args.frames, args.rate, args.start, args.end, args.width, args.fps, args.colors, args.out / "showcase.gif")

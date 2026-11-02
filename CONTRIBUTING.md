@@ -17,7 +17,7 @@ steps to reproduce, what you expected and what happened, and the relevant output
 
 ## Development setup
 Requirements: Godot 4.7.x, Python 3.8+, the four add-on repositories cloned next to this one, godot-dis and
-godot-jsbsim built, and the godot-geo terrain package `terrain/ankara_60km` built (see the README of each).
+godot-jsbsim built, and the godot-geo terrain package `terrain/uskudar_10km` built (see the README of each).
 
 ```sh
 git clone <repository url> && cd godot-sim-demo

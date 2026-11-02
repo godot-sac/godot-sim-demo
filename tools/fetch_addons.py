@@ -1,15 +1,16 @@
 """Downloads the four add-ons and the terrain package from their GitHub releases and unpacks them into this project:
 
-    addons/dis  addons/geo  addons/jsbsim  addons/milsymbol  terrain/ankara_60km
+    addons/dis  addons/geo  addons/jsbsim  addons/milsymbol  terrain/uskudar_10km  (with --all also terrain/uskudar)
 
 addons.json pins the repository, version and file of each package. Downloads are kept in .cache/downloads/, so a
 second run does not download again; a checksum in addons.json is verified, a missing one is printed.
 A folder that is already there is left alone (--force replaces it, but never a link made by tools/link_addons.py).
 
 Usage (from the repo root, any Python 3.8+, no packages needed):
-    python tools/fetch_addons.py [--owner NAME] [--mirror DIR_OR_URL] [--force] [--godot <godot executable>]
+    python tools/fetch_addons.py [--owner NAME] [--mirror DIR_OR_URL] [--all] [--force] [--godot <godot executable>]
 --owner      GitHub user or organisation of the add-on repositories (default: "owner" in addons.json)
 --mirror     take the zips from this folder or URL instead of GitHub (files named as "asset" in addons.json)
+--all        also the optional packages (the 60 km terrain, 245 MB download)
 --godot      import the project once afterwards, so Godot registers the add-ons' classes
 """
 import argparse
@@ -54,9 +55,14 @@ def is_link(rel: str) -> bool:
 
 
 def unpack(archive: Path, rel: str) -> None:
-    """Unpacks the folder rel (e.g. addons/dis) from the zip; it may sit at rel/ or at its last part (dis/)."""
+    """Unpacks the folder rel (e.g. addons/dis) from the zip; it may sit at rel/ or at its last part (dis/).
+    A .gdignore next to rel in the zip (terrain/.gdignore: the editor must not import terrain data) comes along."""
     with zipfile.ZipFile(archive) as z:
         names = z.namelist()
+        ignore = str(PurePosixPath(rel).parent / ".gdignore")
+        if ignore in names and not (ROOT / ignore).exists():
+            (ROOT / ignore).parent.mkdir(parents=True, exist_ok=True)
+            (ROOT / ignore).write_bytes(z.read(ignore))
         for prefix in (rel + "/", PurePosixPath(rel).name + "/"):
             members = [n for n in names if n.startswith(prefix) and not n.endswith("/")]
             if members:
@@ -87,6 +93,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--owner", help="GitHub user or organisation of the add-on repositories")
     parser.add_argument("--mirror", help="folder or URL holding the release zips (instead of GitHub)")
+    parser.add_argument("--all", action="store_true", help="also the optional packages (60 km terrain)")
     parser.add_argument("--force", action="store_true", help="replace folders that are already there")
     parser.add_argument("--godot", type=Path, help="Godot executable; import the project afterwards")
     args = parser.parse_args()
@@ -98,7 +105,8 @@ def main() -> int:
               "sibling repositories (docs/addons.md).", file=sys.stderr)
         return 2
     problems = 0
-    for pkg in config["packages"]:
+    packages = [p for p in config["packages"] if args.all or not p.get("optional")]
+    for pkg in packages:
         rel, asset = pkg["path"], pkg["asset"]
         target = ROOT / rel
         if target.exists() or target.is_symlink():
@@ -133,7 +141,7 @@ def main() -> int:
         subprocess.run([str(args.godot), "--headless", "--path", str(ROOT), "--import"], check=False)
     elif not problems:
         print("Run once so Godot registers the classes: <godot> --headless --path . --import")
-    total = len(config["packages"])
+    total = len(packages)
     print(f"fetch_addons: done, {total - problems} of {total} packages in place"
           + (f"; {problems} failed (see above)" if problems else ""))
     return 1 if problems else 0

@@ -3,7 +3,23 @@
 All notable changes to this project are documented here. Versions follow [semver](https://semver.org/).
 
 ## [Unreleased]
+### Changed
+- The showcase moved from Ankara to Üsküdar, Istanbul (godot-geo packages `uskudar_10km`, default, and `uskudar`,
+  60 km, with `--terrain 10km|60km`): buildings, trees, roads and water are drawn; the UAV loop crosses the Bosphorus
+  and the Çamlıca hills, each waypoint 180 m above the highest building, tree or ground on its leg; land units drive
+  on streets of the package's road layer; a patrol boat (DIS surface platform) runs on the Bosphorus; the air defence
+  post's line of sight and viewshed are blocked by buildings and tree crowns too (about half of each lap in view);
+  new control measures. Units, post and exercise are imaginary and kept away from military areas.
+- Line of sight queries run on worker threads; the "in view" share is weighted by game time.
+- `addons.json` pins the godot-geo terrain assets `godot-geo-terrain-uskudar-10km.zip` (and, with
+  `fetch_addons.py --all`, `-60km.zip`); `fetch_addons.py` also unpacks the zip's `terrain/.gdignore`.
+- The README animation, social preview and screenshots show Üsküdar; the scene's attribution box lists all data
+  sources of the package.
 ### Added
+- `--no-layers` (terrain without buildings, trees and roads), `--no-vsync`; frame times printed at the end of every
+  run and in the `--check` report.
+- `--check` also checks the UAV's clearance above buildings and trees.
+- `tools/probe_route.gd` `scan`: tries air defence post positions on a grid.
 - Showcase scene `demo/showcase.tscn` (opened by `demo/main.tscn`, which checks the add-ons first): a UAV-like
   aircraft (godot-jsbsim J3Cub, `JSBSimAutopilot`) flies a terrain-following waypoint loop over the Ankara terrain
   (godot-geo), the UAV and seven ground units are published on DIS (godot-dis), a `TacticalMap2D` panel shows their

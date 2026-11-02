@@ -1,13 +1,14 @@
 class_name ShowcaseSight
 extends Node3D
-## Line of sight from the opposing air defence post to the UAV (godot-geo GeoTerrain.line_of_sight), drawn in 3D:
-## red while the UAV is in view, yellow up to the terrain that hides it. The viewshed (toggle()) shows where the
-## UAV, at its present height above the ground, would be in view of the post; it is computed on a worker thread
-## with GeoVisibility and drawn over the terrain (GeoTerrain.set_overlay).
+## Line of sight from the opposing air defence post to the UAV (godot-geo GeoVisibility.line_of_sight; terrain,
+## buildings and tree crowns block), drawn in 3D: red while the UAV is in view, yellow up to what hides it. The
+## queries run on worker threads (a few kilometres through the city cost up to ~15 ms). The viewshed (toggle())
+## shows where the UAV, at its present height above the ground, would be in view of the post; it is computed on a
+## worker thread with GeoVisibility and drawn over the terrain (GeoTerrain.set_overlay).
 
 signal viewshed_ready(image: Image, rect: Rect2)
 
-const INTERVAL := 0.2  # game seconds between line of sight queries
+const INTERVAL := 0.2  # wall-clock seconds between line of sight queries
 const VIEWSHED_RADIUS := 9000.0
 const VIEWSHED_RESOLUTION := 256
 
@@ -15,16 +16,21 @@ var terrain: GeoTerrain
 var eye := Vector3.ZERO  # global eye position of the post
 var target: Node3D
 var time_scale := 1.0
-## Last result of GeoTerrain.line_of_sight, plus "from" and "to".
+## Last result of GeoTerrain.line_of_sight (global positions), plus "from" and "to".
 var result := {}
 var queries := 0
 var visible_queries := 0
+## Game seconds with the UAV in view / covered by queries (each query stands for the time since the previous one).
+var visible_time := 0.0
+var covered_time := 0.0
 var viewshed_on := false
 var viewshed_busy := false
 var last_viewshed: Image
 var last_viewshed_rect := Rect2()
 var last_viewshed_ms := 0.0
 var _clock := 0.0
+var _game_time := 0.0  # since the last query
+var _task := -1
 var _mesh := ImmediateMesh.new()
 var _thread: Thread
 
@@ -48,27 +54,46 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if target == null or not is_instance_valid(target) or not target.is_visible_in_tree():
 		result = {}
+		_game_time = 0.0
 		return
-	_clock -= delta * time_scale
-	if _clock > 0.0:
+	_game_time += delta * time_scale
+	_clock -= delta
+	if _clock > 0.0 or _task >= 0:
 		return
 	_clock = INTERVAL
 	query()
 
 
-## Updates the line of sight now.
+## Starts a line of sight query to the target's present position; `result` is updated when it is done.
 func query() -> void:
 	var to := target.global_position
-	result = terrain.line_of_sight(eye, to)
-	result["from"] = eye
-	result["to"] = to
+	_task = WorkerThreadPool.add_task(_trace.bind(terrain.package, terrain.to_package_local(eye),
+			terrain.to_package_local(to), _query_done.bind(eye, to, _game_time)))
+	_game_time = 0.0
+
+
+static func _trace(package: GeoTerrainPackage, a: Vector3, b: Vector3, done: Callable) -> void:
+	done.call_deferred(GeoVisibility.line_of_sight(package, a, b))
+
+
+func _query_done(r: Dictionary, from: Vector3, to: Vector3, game_seconds: float) -> void:
+	WorkerThreadPool.wait_for_task_completion(_task)
+	_task = -1
+	r.point = terrain.from_package_local(r.point)
+	r.clearance_point = terrain.from_package_local(r.clearance_point)
+	r["from"] = from
+	r["to"] = to
+	result = r
 	queries += 1
-	if result.visible:
+	covered_time += game_seconds
+	if r.visible:
 		visible_queries += 1
+		visible_time += game_seconds
 
 
+## Share of the game time the UAV was in view, 0..1.
 func exposure() -> float:
-	return float(visible_queries) / queries if queries > 0 else 0.0
+	return visible_time / covered_time if covered_time > 0.0 else 0.0
 
 
 ## The line as camera-facing ribbons a few pixels wide (plain lines are one pixel and vanish over the terrain).
@@ -152,5 +177,7 @@ static func visible_share(image: Image) -> float:
 
 
 func _exit_tree() -> void:
+	if _task >= 0:
+		WorkerThreadPool.wait_for_task_completion(_task)
 	if _thread:
 		_thread.wait_to_finish()

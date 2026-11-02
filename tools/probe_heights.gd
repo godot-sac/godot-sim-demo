@@ -5,9 +5,9 @@ extends SceneTree
 
 func _initialize() -> void:
 	var args := OS.get_cmdline_user_args()
-	var package := args[0] if args.size() > 0 else "res://terrain/ankara_60km"
-	var step := float(args[1]) if args.size() > 1 else 2000.0
-	var half := float(args[2]) if args.size() > 2 else 20000.0
+	var package := args[0] if args.size() > 0 else "res://terrain/uskudar_10km"
+	var step := float(args[1]) if args.size() > 1 else 500.0
+	var half := float(args[2]) if args.size() > 2 else 5000.0
 	var terrain := GeoTerrain.new()
 	root.add_child(terrain)
 	terrain.package_path = package

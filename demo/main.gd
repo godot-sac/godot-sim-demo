@@ -10,7 +10,7 @@ const ADDONS := [
 	["godot-geo", "res://addons/geo/geo_terrain.gd", ""],
 	["godot-milsymbol", "res://addons/milsymbol/milsymbol.gd", ""],
 ]
-const PACKAGES := ["res://terrain/ankara_60km", "res://terrain/ankara"]
+const PACKAGES := ["res://terrain/uskudar_10km", "res://terrain/uskudar"]
 
 
 func _ready() -> void:
@@ -21,7 +21,7 @@ func _ready() -> void:
 		elif addon[2] != "" and not ClassDB.class_exists(addon[2]):
 			problems.append("%s is present but its library did not load (build it, or use a release zip)" % addon[0])
 	if not PACKAGES.any(func(p: String) -> bool: return FileAccess.file_exists(p.path_join("terrain.json"))):
-		problems.append("no terrain package in res://terrain/ (ankara_60km or ankara)")
+		problems.append("no terrain package in res://terrain/ (uskudar_10km or uskudar)")
 	if problems.is_empty():
 		get_tree().change_scene_to_file.call_deferred(SHOWCASE)
 		return

@@ -2,7 +2,7 @@
 
 From nothing to the running showcase in about 15 minutes: install Godot, clone this repository, let one script
 download the four add-ons and the terrain, open the scene. Most of the time goes into downloads (Godot ~70 MB, the
-add-ons and terrain ~100 MB).
+add-ons and terrain ~35 MB).
 
 ![The showcase after start-up](images/showcase.jpg)
 
@@ -12,7 +12,7 @@ add-ons and terrain ~100 MB).
   [godotengine.org/download/archive/4.7.2-stable](https://godotengine.org/download/archive/4.7.2-stable/) and unzip
   it anywhere. Godot is a single executable; no installer.
 - **git** and **Python 3.8 or newer** (only the standard library is used).
-- About 550 MB of disk space (the Godot zip and the download cache `.cache/` can be deleted afterwards).
+- About 300 MB of disk space (the Godot zip and the download cache `.cache/` can be deleted afterwards).
 
 On Linux, from a terminal:
 ```sh
@@ -49,21 +49,27 @@ script's last line is `fetch_addons: done, 5 of 5 packages in place`. If a downl
 finished downloads are kept in `.cache/`. [addons.md](addons.md) explains the files and how to get them without the
 script.
 
-Check that everything is in place (Linux; on Windows `dir addons terrainnkara_60km`):
+Check that everything is in place (Linux; on Windows `dir addons terrain\uskudar_10km`):
 ```sh
-ls -d addons/dis addons/geo addons/jsbsim addons/milsymbol terrain/ankara_60km/terrain.json
+ls -d addons/dis addons/geo addons/jsbsim addons/milsymbol terrain/uskudar_10km/terrain.json
 ```
+
+The larger 60 × 60 km package of the same area (245 MB download, about 1.3 GB of video memory) is optional:
+`python3 tools/fetch_addons.py --all` adds it as `terrain/uskudar`, and `<godot> --path . -- --terrain 60km` uses
+it.
 
 ## 3. Run
 ```sh
 <godot> --path .
 ```
-A 1600 × 900 window opens over the south-eastern edge of Ankara: a small UAV flying a loop of six waypoints, ground
-units of two sides on the terrain, and a tactical map in the lower right corner. The red air defence post (R-AD on
-the map) watches the UAV: its line of sight is red while it can see the UAV, and yellow up to the hiding terrain (then
-dashed on the map) while the terrain masks it. For the first four minutes the UAV is out of view and the post is
-15 km away, so the line shows on the map and in the `R-AD → UAV` line of the text at the top left; press `]` a few
-times to get there sooner. The data attributions are at the bottom left.
+A 1600 × 900 window opens over Üsküdar on the Asian shore of the Bosphorus in Istanbul: a small UAV flying a loop
+of six waypoints over the water and the Çamlıca hills, land units of two sides on the streets, a patrol boat on the
+Bosphorus, and a tactical map in the lower right corner. Buildings, trees and roads stream in around the camera
+during the first seconds. The red air defence post (R-AD on the map) east of the Çamlıca hills watches the UAV: its
+line of sight is red while it can see the UAV, and yellow up to the hill, building or tree that hides it (then
+dashed on the map). For most of the first three minutes the UAV is over the Bosphorus, hidden behind the hills;
+press `]` a few times to get to the eastern part of the loop sooner. The data attributions are at the bottom left. The units,
+the post and the exercise are imaginary.
 
 The demo publishes its units on the network from the start (DIS on UDP multicast `239.1.2.3`, port 3000); step 5
 says more. On Linux, the console lines about `libasound` / `libpulse` and "All audio drivers failed" are harmless (no
@@ -85,7 +91,7 @@ Things to try:
 If the window shows "godot-sim-demo cannot start" instead, it lists what is missing; see Troubleshooting below.
 
 ## 4. Check the installation (optional)
-The self-test flies the route at 8× for 480 game seconds without a window (about a minute and a half), records and
+The self-test flies the route at 8× for 480 game seconds without a window (a few minutes), records and
 replays the DIS traffic, and checks every add-on's part:
 ```sh
 <godot> --headless --path . -- --check 480
@@ -113,6 +119,7 @@ options.
   demo has no sound.
 - **WSL 2:** it runs under WSLg, usually with software rendering (`llvmpipe` in the first lines of the output), so
   slowly; the self-test is not affected.
+- **Slow picture on an older GPU:** `<godot> --path . -- --no-layers` leaves out the buildings, trees and roads.
 - **Windows firewall prompt** on the first start: DIS uses UDP; allowing private networks is enough for the demo.
 - **No DIS traffic in other tools**: they must use the same port and exercise; on some networks multicast is
   blocked, the demo itself works without it.

@@ -1,68 +1,98 @@
 extends SceneTree
-## Lays out the UAV route: for an air defence post and a loop of waypoints (km, x east, z south) prints, per leg,
-## the waypoint height the showcase would use (terrain following) and the share of the leg the post can see.
+## Measures the UAV route of demo/scenario.gd against an air defence post: per leg the waypoint height the showcase
+## uses (terrain following over buildings and trees) and the share of the leg the post can see (buildings and trees
+## block, as in the showcase). With "scan" it tries every candidate post on a grid instead and lists the best.
 ##   <godot> --headless --path . -s res://tools/probe_route.gd -- '<json>'
-## json: {"ad": [x, z] or "box": [x, z, w, d], "route": [[x, z], ...], "agl": 250, "eye": 8}
+## json (all optional): {"package": "res://terrain/uskudar_10km", "ad": [x, z] (m; default the scenario's),
+##   "route": [[x, z], ...] (m; default the scenario's), "agl": 180, "eye": 8,
+##   "scan": [x0, z0, x1, z1, step] (m), "target": [0.3, 0.7] (wanted share in view for "scan")}
 
 
 func _initialize() -> void:
-	var cfg: Dictionary = JSON.parse_string(OS.get_cmdline_user_args()[0])
+	var args := OS.get_cmdline_user_args()
+	var cfg: Dictionary = JSON.parse_string(args[0]) if args.size() > 0 else {}
 	var terrain := GeoTerrain.new()
+	terrain.auto_layers = false  # queries only; the layers' data is read by GeoVisibility
 	root.add_child(terrain)
-	terrain.package_path = cfg.get("package", "res://terrain/ankara_60km")
+	terrain.package_path = cfg.get("package", "res://terrain/uskudar_10km")
 	await process_frame
-	var agl: float = cfg.get("agl", 250.0)
-	var eye: Vector3
-	if cfg.has("box"):
-		var b: Array = cfg.box
-		eye = Vector3(0, -INF, 0)
-		for z in range(int(b[1] * 1000), int((b[1] + b[3]) * 1000) + 1, 100):
-			for x in range(int(b[0] * 1000), int((b[0] + b[2]) * 1000) + 1, 100):
-				var h := terrain.height_at(x, z)
-				if h > eye.y:
-					eye = Vector3(x, h, z)
-	else:
-		eye = Vector3(cfg.ad[0] * 1000.0, 0, cfg.ad[1] * 1000.0)
-		eye.y = terrain.height_at(eye.x, eye.z)
-	eye.y += cfg.get("eye", 8.0)
-	print("post at (%.1f, %.1f) km, eye %.0f m" % [eye.x / 1000.0, eye.z / 1000.0, eye.y])
-	var pts: Array = cfg.route
-	var n := pts.size()
+	var plan: Array = ShowcaseScenario.ROUTE
+	if cfg.has("route"):
+		plan = cfg.route.map(func(p: Array) -> Vector3: return Vector3(p[0], 0, p[1]))
+	var route := ShowcaseScenario.route_points(terrain, plan, cfg.get("agl", ShowcaseScenario.UAV.agl))
+	var samples := _samples(route)
+	var eye_height: float = cfg.get("eye", ShowcaseScenario.AD_EYE_HEIGHT)
+	if cfg.has("scan"):
+		_scan(terrain, cfg.scan, samples, eye_height, cfg.get("target", [0.3, 0.7]))
+		quit()
+		return
+	var ad := ShowcaseScenario.AD_POSITION
+	if cfg.has("ad"):
+		ad = Vector3(cfg.ad[0], 0, cfg.ad[1])
+	var eye := Vector3(ad.x, terrain.height_at(ad.x, ad.z) + eye_height, ad.z)
+	print("post at (%.0f, %.0f) m, eye %.0f m" % [eye.x, eye.z, eye.y])
 	var total := 0
 	var seen := 0
 	var length := 0.0
-	var heights := []
-	for i in n:
-		var a := Vector3(pts[(i + n - 1) % n][0], 0, pts[(i + n - 1) % n][1]) * 1000.0
-		var b := Vector3(pts[i][0], 0, pts[i][1]) * 1000.0
-		var side := (b - a).normalized().cross(Vector3.UP) * 300.0
-		var highest := -INF
-		for k in int(a.distance_to(b) / 100.0) + 1:
-			var p := a.lerp(b, k * 100.0 / a.distance_to(b))
-			for q: Vector3 in [p, p + side, p - side]:
-				var h := terrain.height_at(q.x, q.z)
-				if not is_nan(h):
-					highest = maxf(highest, h)
-		heights.append(highest + agl)
-	for i in n:
-		var a := Vector3(pts[(i + n - 1) % n][0], heights[(i + n - 1) % n], pts[(i + n - 1) % n][1] * 1.0)
-		a.x *= 1000.0
-		a.z *= 1000.0
-		var b := Vector3(pts[i][0] * 1000.0, heights[i], pts[i][1] * 1000.0)
-		var leg_total := 0
+	var blocked := {}
+	for leg in samples.size():
 		var leg_seen := 0
-		var min_agl := INF
-		for k in int(a.distance_to(b) / 200.0) + 1:
-			var p := a.lerp(b, k * 200.0 / a.distance_to(b))
-			min_agl = minf(min_agl, p.y - terrain.height_at(p.x, p.z))
-			leg_total += 1
-			if terrain.line_of_sight(eye, p).visible:
+		var min_clear := INF
+		for p: Vector3 in samples[leg]:
+			min_clear = minf(min_clear, p.y - ShowcaseScenario.top_at(terrain, p.x, p.z))
+			var r := terrain.line_of_sight(eye, p)
+			if r.visible:
 				leg_seen += 1
-		total += leg_total
+			else:
+				blocked[r.obstacle] = blocked.get(r.obstacle, 0) + 1
+		var a := route[(leg + route.size() - 1) % route.size()]
+		var b := route[leg]
+		total += samples[leg].size()
 		seen += leg_seen
 		length += a.distance_to(b)
-		print("leg %d -> (%5.1f, %5.1f) km  height %4.0f m  %4.1f km  in view %3.0f %%  min agl (straight) %4.0f m" % [
-				i, pts[i][0], pts[i][1], heights[i], a.distance_to(b) / 1000.0, 100.0 * leg_seen / leg_total, min_agl])
-	print("loop %.1f km, %.0f min at 75 kt, in view %.0f %%" % [length / 1000.0, length / 38.6 / 60.0,
-			100.0 * seen / total])
+		print("leg %d -> (%5.0f, %5.0f) m  height %4.0f m  %4.1f km  in view %3.0f %%  lowest clearance (straight) %4.0f m"
+				% [leg, b.x, b.z, b.y, a.distance_to(b) / 1000.0, 100.0 * leg_seen / samples[leg].size(), min_clear])
+	print("loop %.1f km, %.1f min at 75 kt, in view %.0f %%, hidden by %s" % [length / 1000.0, length / 38.6 / 60.0,
+			100.0 * seen / total, blocked])
 	quit()
+
+
+## Points every 200 m along each leg (straight between the waypoints).
+func _samples(route: PackedVector3Array) -> Array:
+	var out := []
+	for i in route.size():
+		var a := route[(i + route.size() - 1) % route.size()]
+		var b := route[i]
+		var leg := []
+		for k in int(a.distance_to(b) / 200.0) + 1:
+			leg.append(a.lerp(b, k * 200.0 / a.distance_to(b)))
+		out.append(leg)
+	return out
+
+
+func _scan(terrain: GeoTerrain, box: Array, samples: Array, eye_height: float, target: Array) -> void:
+	var found := []
+	var z: float = box[1]
+	while z <= box[3]:
+		var x: float = box[0]
+		while x <= box[2]:
+			var g := terrain.height_at(x, z)
+			# On open ground: not on water, not inside a building footprint.
+			if not is_nan(g) and terrain.water_at(x, z) < 0.1 and \
+					terrain.package.layer_value("footprints", x, z) == 0:
+				var eye := Vector3(x, g + eye_height, z)
+				var seen := 0
+				var total := 0
+				for leg: Array in samples:
+					for p: Vector3 in leg:
+						total += 1
+						if terrain.line_of_sight(eye, p).visible:
+							seen += 1
+				found.append([float(seen) / total, x, z])
+			x += box[4]
+		z += box[4]
+	var mid: float = (target[0] + target[1]) * 0.5
+	found.sort_custom(func(a: Array, b: Array) -> bool: return absf(a[0] - mid) < absf(b[0] - mid))
+	print("%d candidates; nearest to %.0f %% in view:" % [found.size(), 100.0 * mid])
+	for f: Array in found.slice(0, 25):
+		print("  (%5.0f, %5.0f)  in view %3.0f %%" % [f[1], f[2], 100.0 * f[0]])

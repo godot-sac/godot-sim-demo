@@ -23,6 +23,7 @@ var _is_air := false
 func setup(entity_type: PackedInt32Array, force: int, marking: String, sidc: String, ghost := false) -> void:
 	var color: Color = FORCE_COLORS.get(force, Color(1, 1, 0.5))
 	_is_air = entity_type.size() > 1 and entity_type[1] == 2
+	var is_surface := entity_type.size() > 1 and entity_type[1] == 3
 	var category := entity_type[3] if entity_type.size() > 3 else 0
 	_model = Node3D.new()
 	add_child(_model)
@@ -35,6 +36,8 @@ func setup(entity_type: PackedInt32Array, force: int, marking: String, sidc: Str
 	if with_model:
 		if _is_air:
 			_aircraft(mat)
+		elif is_surface:
+			_boat(mat)
 		elif category == 1:
 			_tank(mat)
 		elif category == 28:
@@ -141,6 +144,18 @@ func _air_defence(mat: Material) -> void:
 	var radar := BoxMesh.new()
 	radar.size = Vector3(3.0, 1.2, 0.2)
 	_part(radar, mat, Vector3(0, 5.6, 1.5))
+
+
+func _boat(mat: Material) -> void:
+	var hull := BoxMesh.new()
+	hull.size = Vector3(4.0, 1.8, 14.0)
+	_part(hull, mat, Vector3(0, 0.4, 0))  # about 0.5 m below the water line
+	var bow := PrismMesh.new()
+	bow.size = Vector3(4.0, 3.0, 1.8)
+	_part(bow, mat, Vector3(0, 0.4, -8.5), Vector3(-PI / 2, 0, 0))
+	var cabin := BoxMesh.new()
+	cabin.size = Vector3(2.8, 2.0, 4.5)
+	_part(cabin, mat, Vector3(0, 2.3, 1.0))
 
 
 func _aircraft(mat: Material) -> void:

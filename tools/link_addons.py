@@ -64,7 +64,7 @@ def main() -> int:
             print(f"warning: {binary_rel} is empty; build the extension first ({how})", file=sys.stderr)
             problems += 1
     if not any((root / "terrain").glob("*/terrain.json")):
-        print("warning: no terrain package; build godot-geo terrain/ankara_60km (godot-geo docs/demo-3d.md)",
+        print("warning: no terrain package; build godot-geo terrain/uskudar_10km (godot-geo docs/city.md)",
               file=sys.stderr)
         problems += 1
     if args.godot:

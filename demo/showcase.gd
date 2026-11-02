@@ -1,6 +1,7 @@
 extends Node3D
 ## Unified showcase: a UAV-like aircraft (godot-jsbsim JSBSimAircraft + JSBSimAutopilot) flies a waypoint loop over
-## real terrain around Ankara (godot-geo GeoTerrain), land units sit on the terrain, everything is published on DIS
+## Üsküdar and the Bosphorus in Istanbul (godot-geo GeoTerrain with buildings, trees, roads and water from open
+## data), land units drive on the streets and a boat on the water, everything is published on DIS
 ## (godot-dis), a 2D tactical map shows symbols and control measures (godot-milsymbol TacticalMap2D), an opposing
 ## air defence post keeps a line of sight on the UAV and can show its viewshed (godot-geo), and the DIS traffic can
 ## be recorded and played back (godot-dis DisRecorder / DisPlayer).
@@ -9,7 +10,10 @@ extends Node3D
 ##
 ## Options after `--`:
 ##   --port N            DIS port (default 3000; --check uses 3290 unless given). Multicast 239.1.2.3, exercise 1.
-##   --terrain PATH      terrain package (default res://terrain/ankara_60km, then res://terrain/ankara)
+##   --terrain PACKAGE   terrain package: 10km (default, res://terrain/uskudar_10km), 60km (res://terrain/uskudar)
+##                       or a package directory
+##   --no-layers         terrain without buildings, trees and roads (slower computers)
+##   --no-vsync          draw as fast as possible (frame time measurements)
 ##   --time-scale X      simulation speed (1 to 16)
 ##   --record FILE       record from the start (default file for R: user://showcase.pcapng)
 ##   --replay FILE       open a recording in playback mode
@@ -22,18 +26,19 @@ extends Node3D
 ##                       wall-clock time and quit at the end of the tour (input of tools/make_media.py)
 ##   --check N           self-test: run N game seconds, record, play the recording back, check, report, exit code
 ##   --report FILE       JSON report of --check (default user://showcase_check.json)
+## At the end of a run the console gets the frame times (median, 95th and 99th percentile).
 
-const PACKAGES := ["res://terrain/ankara_60km", "res://terrain/ankara"]
+const PACKAGES := {"10km": "res://terrain/uskudar_10km", "60km": "res://terrain/uskudar"}
 const DEFAULT_RECORDING := "user://showcase.pcapng"
 const SUN_ELEVATION := 28.0
 const SUN_AZIMUTH := 220.0
 const TRAIL_INTERVAL := 2.0
 const REPLAY_SPEEDS := [0.25, 0.5, 1.0, 2.0, 4.0, 8.0, 16.0, 32.0]
-## --tour: [seconds after the start (wall clock), key, shift]. Fast-forwards the first four minutes of the route at
-## 16×, then at 4× (from 15.5 s on, about 28 s): the UAV comes into the air defence post's view, the large map, the
-## view from the post, the recording played back.
+## --tour: [seconds after the start (wall clock), key, shift]. Fast-forwards the first three minutes of the route at
+## 16×, then runs at 4×: from 15.5 s on (about 28 s, recorded) the UAV comes out from behind the trees into the air
+## defence post's view, the large map, the view of the post, the recording played back.
 const TOUR := [[0.2, KEY_V], [0.4, KEY_BRACKETRIGHT], [0.5, KEY_BRACKETRIGHT], [0.6, KEY_BRACKETRIGHT],
-		[0.7, KEY_BRACKETRIGHT], [15.3, KEY_BRACKETLEFT], [15.4, KEY_BRACKETLEFT], [15.5, KEY_R], [27.5, KEY_M],
+		[0.7, KEY_BRACKETRIGHT], [10.9, KEY_BRACKETLEFT], [11.0, KEY_BRACKETLEFT], [15.5, KEY_R], [27.5, KEY_M],
 		[33.5, KEY_M], [33.6, KEY_TAB, true], [38.5, KEY_P], [38.7, KEY_UP], [38.8, KEY_UP]]
 const TOUR_TURN := 0.06  # rad/s of camera orbit during the tour
 const TOUR_END := 44.0
@@ -76,6 +81,7 @@ var game_time := 0.0
 var time_scale := 1.0
 var waypoints_reached := 0
 var min_agl := INF
+var min_clearance := INF  # above buildings, trees and ground
 var replaying := false
 var recording_path := DEFAULT_RECORDING
 var _options := {}
@@ -93,6 +99,8 @@ var _tour_step := 0
 var _capture_dir := ""
 var _capture_frame := 0
 var _capture_tasks := PackedInt64Array()
+var _frame_ms := PackedFloat32Array()
+var _clearance_clock := 0.0
 
 
 func _ready() -> void:
@@ -100,6 +108,8 @@ func _ready() -> void:
 	if _options.has("check"):
 		_check = ShowcaseCheck.new(self, float(_options.check))
 	var port := int(_options.get("port", 3290 if _check else 3000))
+	if _options.has("no-vsync"):
+		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	if not _load_terrain():
 		return
 	_place_sun()
@@ -166,7 +176,11 @@ func _ready() -> void:
 
 
 func _load_terrain() -> bool:
-	for p: String in [str(_options.get("terrain", ""))] + PACKAGES:
+	var wanted := str(_options.get("terrain", ""))
+	var candidates: Array = [PACKAGES.get(wanted, wanted)] if wanted != "" else PACKAGES.values()
+	# Without a window nothing is drawn: no layer meshes (the visibility queries read the layer data themselves).
+	terrain.auto_layers = not _options.has("no-layers") and DisplayServer.get_name() != "headless"
+	for p: String in candidates:
 		if p != "" and FileAccess.file_exists(p.path_join("terrain.json")):
 			# The DIS origin is the package origin, so the terrain, JSBSim and DIS share one frame.
 			var json: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(p.path_join("terrain.json")))
@@ -176,7 +190,7 @@ func _load_terrain() -> bool:
 			terrain.package_path = p
 			break
 	if not terrain.is_loaded():
-		_fail("no terrain package; build godot-geo terrain/ankara_60km and run tools/link_addons.py (see README)")
+		_fail("no terrain package %s; see README (Installation)" % (wanted if wanted != "" else "in res://terrain/"))
 		return false
 	if not terrain.origin_warning.is_empty():
 		push_warning(terrain.origin_warning)
@@ -245,22 +259,9 @@ func _spawn_units() -> void:
 ## The UAV: JSBSimAircraft (J3Cub flight model) in the air on the route, its autopilot and DIS entity.
 func _spawn_uav() -> void:
 	var s: Dictionary = ShowcaseScenario.UAV
-	# Terrain following: each waypoint is `agl` above the highest ground on the leg to it (sampled every 100 m,
-	# 300 m to both sides); the autopilot climbs or descends to it along that leg.
-	var n := ShowcaseScenario.ROUTE.size()
-	for i in n:
-		var a: Vector3 = ShowcaseScenario.ROUTE[(i + n - 1) % n]
-		var b: Vector3 = ShowcaseScenario.ROUTE[i]
-		var side := (b - a).normalized().cross(Vector3.UP) * 300.0
-		var highest := -INF
-		for k in int(a.distance_to(b) / 100.0) + 1:
-			var p := a.lerp(b, k * 100.0 / a.distance_to(b))
-			for q: Vector3 in [p, p + side, p - side]:
-				var h := terrain.height_at(q.x, q.z)
-				if not is_nan(h):
-					highest = maxf(highest, h)
-		route.append(Vector3(b.x, highest + s.agl, b.z))
-		route_height = maxf(route_height, highest + s.agl)
+	route = ShowcaseScenario.route_points(terrain)
+	for p in route:
+		route_height = maxf(route_height, p.y)
 
 	aircraft = JSBSimAircraft.new()
 	aircraft.name = "UAV"
@@ -339,6 +340,12 @@ func _physics_process(delta: float) -> void:
 	var agl := aircraft.position.y - terrain.height_at(aircraft.position.x, aircraft.position.z)
 	if not is_nan(agl):
 		min_agl = minf(min_agl, agl)
+	_clearance_clock -= delta * time_scale
+	if _clearance_clock <= 0.0:
+		_clearance_clock = 1.0
+		var top := ShowcaseScenario.top_at(terrain, aircraft.position.x, aircraft.position.z)
+		if top > -INF:
+			min_clearance = minf(min_clearance, aircraft.position.y - top)
 	_trail_clock -= delta * time_scale
 	if _trail_clock <= 0.0:
 		_trail_clock = TRAIL_INTERVAL
@@ -353,6 +360,7 @@ func _physics_process(delta: float) -> void:
 func _process(delta: float) -> void:
 	if map == null:
 		return
+	_frame_ms.append(delta * 1000.0)
 	if _tour_clock >= 0.0:
 		_advance_tour(delta)
 	if replaying and _quit_at >= 0.0 and player.get_position() >= minf(_quit_at, player.get_duration() - 0.1):
@@ -407,9 +415,9 @@ func _update_hud() -> void:
 		lines.append("Recording: " + ("● %s, %d packets, %s" % [recording_path.get_file(), recorder.get_packet_count(),
 				_clock(recorder.get_elapsed())] if recorder.is_recording() else "off (R)"))
 	if sight.result.has("visible"):
-		lines.append("R-AD → UAV: %s, %.1f km, clearance %.0f m; in view %.0f %% of the time%s" % [
-				"IN VIEW" if sight.result.visible else "masked by terrain", sight.result.from.distance_to(
-				sight.result.to) / 1000.0, sight.result.clearance, 100.0 * sight.exposure(),
+		lines.append("R-AD → UAV: %s, %.1f km; in view %.0f %% of the time%s" % [
+				"IN VIEW" if sight.result.visible else "hidden by " + str(sight.result.obstacle),
+				sight.result.from.distance_to(sight.result.to) / 1000.0, 100.0 * sight.exposure(),
 				("  viewshed %.0f ms" % sight.last_viewshed_ms) if sight.viewshed_on else ""])
 	lines.append("F1 help")
 	info.text = "\n".join(lines)
@@ -448,7 +456,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			_target_index = posmod(_target_index + (-1 if key.shift_pressed else 1), _targets.size())
 			var t := _targets[_target_index]
 			camera.target = t
-			camera.distance = 90.0 if t == aircraft else 60.0
+			if t == aircraft:
+				camera.distance = 90.0
+			else:  # from above the roofs around a unit in the streets
+				camera.distance = 160.0
+				camera.pitch = minf(camera.pitch, -0.5)
 			camera.snap()
 		KEY_BRACKETLEFT:
 			set_time_scale(time_scale * 0.5)
@@ -660,9 +672,30 @@ func _finish(code: int) -> void:
 		WorkerThreadPool.wait_for_task_completion(task)
 	if _capture_dir != "":
 		print("captured %d frames to %s" % [_capture_frame, _capture_dir])
+	print(frame_summary())
 	if _options.has("screenshot"):
 		await _screenshot(str(_options.screenshot))
 	get_tree().quit(code)
+
+
+## Frame times of this run (wall clock, every drawn frame): median, 95th and 99th percentile.
+func frame_stats() -> Dictionary:
+	var f := Array(_frame_ms.slice(mini(60, _frame_ms.size() / 2)))  # without the start-up frames
+	f.sort()
+	if f.is_empty():
+		return {"frames": 0}
+	return {"frames": f.size(), "median_ms": snappedf(f[f.size() / 2], 0.01),
+			"p95_ms": snappedf(f[int(f.size() * 0.95)], 0.01), "p99_ms": snappedf(f[int(f.size() * 0.99)], 0.01)}
+
+
+func frame_summary() -> String:
+	var st := frame_stats()
+	if st.frames == 0:
+		return "frames: none"
+	var size := get_viewport().get_visible_rect().size
+	return "frames: %d at %dx%d, median %.2f ms (%.0f fps), p95 %.2f ms, p99 %.2f ms, layers %s" % [st.frames,
+			size.x, size.y, st.median_ms, 1000.0 / st.median_ms, st.p95_ms, st.p99_ms,
+			"off" if _options.has("no-layers") else "on"]
 
 
 func _fail(message: String) -> void:

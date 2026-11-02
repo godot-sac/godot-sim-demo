@@ -5,11 +5,13 @@ extends RefCounted
 ## quits with exit code 0 (all checks passed) or 1.
 ##
 ## Checks: the flight model runs without crash or failure; the autopilot reaches waypoints and keeps clear of the
-## terrain; every own entity is published on DIS; the land units' DIS positions lie on the terrain (godot-dis ECEF
-## converted back with godot-geo GeoMath); lines of sight and the viewshed give plausible answers; the map shows all
-## units and control measures; the recording plays back with every entity, near its live position.
+## terrain, buildings and trees; every own entity is published on DIS; the land units' and the boat's DIS positions
+## lie on the terrain or the water (godot-dis ECEF converted back with godot-geo GeoMath); lines of sight and the
+## viewshed give plausible answers; the map shows all units and control measures; the recording plays back with
+## every entity, near its live position.
 
 const MIN_AGL := 100.0
+const MIN_CLEARANCE := 60.0  # above the highest building or tree under the UAV
 const GROUND_TOLERANCE := 0.5  # m between a land unit's DIS height and the terrain
 const REPLAY_TOLERANCE_AIR := 300.0
 const REPLAY_TOLERANCE_LAND := 60.0
@@ -64,7 +66,7 @@ func step(delta: float) -> void:
 		_end_live()
 
 
-## Height of each land unit's last DIS position above the terrain under it.
+## Height of each land unit's and the boat's last DIS position above the terrain (or water surface) under it.
 func _sample_ground() -> void:
 	var terrain: GeoTerrain = showcase.terrain
 	for u: ShowcaseGroundUnit in showcase.own_forces.get_children():
@@ -82,6 +84,8 @@ func _end_live() -> void:
 			"crashed" if aircraft.is_crashed() else ("failed" if aircraft.is_failed() else "ok"))
 	_add("autopilot reached waypoints", showcase.waypoints_reached >= 2, showcase.waypoints_reached)
 	_add("UAV clear of the terrain", showcase.min_agl >= MIN_AGL, snappedf(showcase.min_agl, 0.1))
+	_add("UAV clear of buildings and trees", showcase.min_clearance >= MIN_CLEARANCE,
+			snappedf(showcase.min_clearance, 0.1))
 	var unpublished := []
 	for e: DisEntity in showcase.own_entities():
 		if e.get_published_count() == 0:
@@ -89,7 +93,7 @@ func _end_live() -> void:
 		_live_positions[e.marking] = (e.get_parent() as Node3D).global_position
 	_add("all entities published on DIS", unpublished.is_empty(), unpublished if unpublished else
 			showcase.own_entities().size())
-	_add("land units on the terrain (DIS height)", _ground_samples > 0 and _ground_error <= GROUND_TOLERANCE,
+	_add("units on the ground or water (DIS height)", _ground_samples > 0 and _ground_error <= GROUND_TOLERANCE,
 			"%.3f m max over %d samples" % [_ground_error, _ground_samples])
 	_check_sight()
 	var map: ShowcaseMap = showcase.map
@@ -119,8 +123,9 @@ func _check_sight() -> void:
 	_add("line of sight queries", sight.queries > 0, "%d, UAV in view %.0f %%" % [sight.queries,
 			100.0 * sight.exposure()])
 	var up: Dictionary = terrain.line_of_sight(sight.eye, sight.eye + Vector3(0, 500, 0))
-	# A point 5 m under the ground 3 km away can not be seen.
-	var far := sight.eye + Vector3(3000, 0, 0)
+	# A point 5 m under the ground 3 km away (towards the package centre, so it is inside) can not be seen.
+	var toward := Vector3(-sight.eye.x, 0, -sight.eye.z).normalized()
+	var far := sight.eye + (toward if toward != Vector3.ZERO else Vector3.RIGHT) * 3000.0
 	far.y = terrain.height_at(far.x, far.z) - 5.0
 	var under: Dictionary = terrain.line_of_sight(sight.eye, far)
 	_add("line of sight sanity (sky visible, underground hidden)", up.visible and not under.visible,
@@ -169,6 +174,8 @@ func _report() -> void:
 		"terrain": showcase.terrain.package_path,
 		"route_height": snappedf(showcase.route_height, 0.1),
 		"frame_ms": {"mean": _mean(frames), "p99": frames[int(frames.size() * 0.99)] if frames else 0.0},
+		"render_frames": showcase.frame_stats(),
+		"layers": not showcase._options.has("no-layers"),
 		"checks": checks,
 	}
 	var path := str(showcase._options.get("report", "user://showcase_check.json"))
