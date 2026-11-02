@@ -1,0 +1,23 @@
+# Godot
+.godot/
+*.import
+export_presets.cfg
+/android/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Python (tools)
+.venv/
+__pycache__/
+*.pyc
+
+# Add-ons and terrain: linked from the sibling repositories (tools/link_addons.py) or unpacked from their releases
+addons/dis
+addons/geo
+addons/jsbsim
+addons/milsymbol
+terrain

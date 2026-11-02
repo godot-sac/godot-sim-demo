@@ -1,0 +1,141 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://demo/showcase.gd" id="1_showcase"]
+[ext_resource type="Script" path="res://addons/geo/geo_terrain.gd" id="2_terrain"]
+[ext_resource type="Script" path="res://demo/orbit_camera.gd" id="3_camera"]
+
+[sub_resource type="ProceduralSkyMaterial" id="sky_mat"]
+sky_top_color = Color(0.32, 0.5, 0.78, 1)
+sky_horizon_color = Color(0.7, 0.76, 0.84, 1)
+ground_bottom_color = Color(0.6, 0.65, 0.72, 1)
+ground_horizon_color = Color(0.7, 0.76, 0.84, 1)
+sun_angle_max = 5.0
+
+[sub_resource type="Sky" id="sky"]
+sky_material = SubResource("sky_mat")
+
+[sub_resource type="Environment" id="env"]
+background_mode = 2
+sky = SubResource("sky")
+ambient_light_source = 3
+ambient_light_energy = 0.45
+reflected_light_source = 2
+tonemap_mode = 4
+fog_enabled = true
+fog_mode = 0
+fog_light_color = Color(0.68, 0.74, 0.83, 1)
+fog_density = 1.2e-05
+fog_aerial_perspective = 0.5
+fog_sky_affect = 0.3
+
+[node name="Showcase" type="Node3D"]
+script = ExtResource("1_showcase")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("env")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+light_color = Color(1, 0.96, 0.9, 1)
+light_energy = 1.7
+shadow_enabled = true
+directional_shadow_max_distance = 3000.0
+
+[node name="DisGeoOrigin" type="DisGeoOrigin" parent="."]
+latitude = 39.9334
+longitude = 32.8597
+
+[node name="GeoTerrain" type="Node3D" parent="."]
+script = ExtResource("2_terrain")
+ground_detail = 0.6
+
+[node name="DisNetwork" type="DisNetwork" parent="."]
+mode = 2
+port = 3000
+multicast_group = "239.1.2.3"
+exercise_id = 1
+site_id = 5
+application_id = 1
+autostart = false
+
+[node name="DisEntityManager" type="DisEntityManager" parent="."]
+network_path = NodePath("../DisNetwork")
+smoothing_time = 1.0
+
+[node name="DisRecorder" type="DisRecorder" parent="."]
+network_path = NodePath("../DisNetwork")
+
+[node name="OwnForces" type="Node3D" parent="."]
+
+[node name="Replay" type="Node3D" parent="."]
+
+[node name="ReplayNetwork" type="DisNetwork" parent="Replay"]
+mode = 2
+port = 3000
+multicast_group = "239.1.2.3"
+exercise_id = 1
+site_id = 5
+application_id = 2
+autostart = false
+
+[node name="ReplayManager" type="DisEntityManager" parent="Replay"]
+network_path = NodePath("../ReplayNetwork")
+smoothing_time = 0.3
+
+[node name="DisPlayer" type="DisPlayer" parent="Replay"]
+network_path = NodePath("../ReplayNetwork")
+entity_manager_path = NodePath("../ReplayManager")
+
+[node name="Camera" type="Camera3D" parent="."]
+script = ExtResource("3_camera")
+near = 0.5
+far = 150000.0
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="Info" type="Label" parent="HUD"]
+offset_left = 12.0
+offset_top = 10.0
+offset_right = 760.0
+offset_bottom = 260.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+
+[node name="Banner" type="Label" parent="HUD"]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -330.0
+offset_top = -150.0
+offset_right = 270.0
+offset_bottom = -96.0
+autowrap_mode = 3
+grow_horizontal = 2
+horizontal_alignment = 1
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 20
+
+[node name="Help" type="Label" parent="HUD"]
+visible = false
+offset_left = 12.0
+offset_top = 270.0
+offset_right = 760.0
+offset_bottom = 600.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+
+[node name="Attribution" type="Label" parent="HUD"]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = -80.0
+offset_right = 1100.0
+offset_bottom = -8.0
+grow_vertical = 0
+theme_override_colors/font_color = Color(1, 1, 1, 0.85)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 11
