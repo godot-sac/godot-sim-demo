@@ -24,3 +24,6 @@ terrain
 
 # Release zips downloaded by tools/fetch_addons.py
 .cache/
+
+# Media made by tools/make_media.py (release assets)
+build/

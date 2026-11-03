@@ -1,6 +1,7 @@
 # Animation and preview image
 
-The README animation (`docs/images/showcase.gif`) and the social preview image (`docs/images/social-preview.png`,
+The animation (`build/media/showcase.gif`, attached to each release) and the social preview image
+(`docs/images/social-preview.png`,
 1280 × 640, set by hand in the GitHub repository settings under "Social preview") are made from a recording of the
 built-in tour, so they can be made again after a change to the scene.
 
@@ -30,12 +31,12 @@ cropped to 1280 × 640, with the project name and the data attribution on it. `-
 `--end` and `--preview-at` change them.
 
 ## Size and where the files live
-Git holds only files the README needs and that stay small. Larger media, such as a full-resolution video of the
-tour, belong on the GitHub release as assets, not in git.
+Git holds only files the README needs and that stay small (under 1 MB). Larger media, such as the animation or a
+full-resolution video of the tour, belong on the GitHub release as assets, not in git.
 
 | File | In git | Size |
 |---|---|---|
-| `docs/images/showcase.gif` | yes (README) | about 4.7 MB |
+| `build/media/showcase.gif` | no: a release asset (`showcase.gif`), linked from the README | about 4.7 MB |
 | `docs/images/social-preview.png` | yes (upload it in the repository settings) | about 760 kB |
 | `docs/images/showcase.jpg`, `playback.jpg` | yes (README, getting-started guide) | 180–270 kB each |
 | full-resolution tour video | no: a release asset if wanted (encode the frames with any video tool) | |
@@ -45,5 +46,5 @@ Every image shows the terrain package's data (Copernicus DEM and Sentinel-2, Ope
 buildings, roads and water, ESA WorldCover, ETH canopy height, GHSL building heights), so its notices must stay
 visible: the scene draws them in the lower left corner on a dark box (from the package's `attribution`), the preview
 image carries a shortened two-line version along the bottom edge (it covers the scene's own text, which the crop
-would cut), and the README repeats them under the animation. At GIF size the in-scene text is too small to read,
-which is why the README line is there.
+would cut), and the README repeats them under its picture. At GIF size the in-scene text is too small to read, so
+the release notes carry the same lines next to the animation.

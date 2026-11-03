@@ -8,13 +8,18 @@ and buildings, and the DIS traffic is recorded and played back. The units and th
 
 > **Status:** in development, not released yet. It follows the add-ons' v0.1.0 work.
 
-![Showcase: the UAV comes into the air defence post's view over Üsküdar, the tactical map, the post, the recording played back](docs/images/showcase.gif)
+![Showcase: the UAV over the Bosphorus and Üsküdar, units, the air defence post's line of sight and the tactical map](docs/images/showcase.jpg)
+
+A 28 s animation of the built-in tour (the UAV comes into the post's view, the large map, the post, the recording
+played back) is attached to each release as `showcase.gif`:
+[releases](https://github.com/OWNER/godot-sim-demo/releases).
 
 <sub>Buildings, roads and water © OpenStreetMap contributors, Overture Maps Foundation (ODbL 1.0). Contains modified
 Copernicus Sentinel data 2025. Elevation produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus
 Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved. Land
 cover © ESA WorldCover project 2021 (CC BY 4.0). Canopy height: ETH Global Canopy Height 2020, Lang et al. 2023
-(CC BY 4.0). Building heights: GHS-BUILT-H R2023A, European Commission JRC (CC BY 4.0).</sub>
+(CC BY 4.0). Building heights: GHS-BUILT-H R2023A, European Commission JRC (CC BY 4.0). Full notices:
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).</sub>
 
 ## Features
 
@@ -116,6 +121,7 @@ godot-dis 2D demo shows the UAV and the units, and their entities appear here on
 - [docs/getting-started.md](docs/getting-started.md): from a clean machine to the running showcase.
 - [docs/addons.md](docs/addons.md): where the add-ons come from (release zips or sibling repositories).
 - [docs/media.md](docs/media.md): how the animation and the social preview image are made.
+- [ROADMAP.md](ROADMAP.md): what is planned next. [CHANGELOG.md](CHANGELOG.md): what changed.
 
 Each add-on documents its own API in its repository (the release zips hold the add-on only):
 

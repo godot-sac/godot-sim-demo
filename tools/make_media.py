@@ -3,7 +3,8 @@
 1. Record the tour as PNG frames (needs a window; 44 s, 1-2 GB of frames; see docs/media.md):
        godot --path . -- --tour --capture <frames> --port 3291
 2. python tools/make_media.py <frames> [--start 15.5 --end 43.5] [--width 440 --fps 6 --colors 48] [--preview-at 37.3]
-   writes docs/images/showcase.gif and docs/images/social-preview.png (1280 x 640, for the repository settings).
+   writes build/media/showcase.gif (a release asset, not in git) and docs/images/social-preview.png
+   (1280 x 640, for the repository settings).
 
 Needs Pillow (pip install Pillow); it is a maintainer tool, the demo itself does not use Python.
 """
@@ -83,9 +84,10 @@ def main() -> None:
     parser.add_argument("--fps", type=int, default=6)
     parser.add_argument("--colors", type=int, default=48)
     parser.add_argument("--preview-at", type=float, default=37.3, help="second of the social preview frame")
-    parser.add_argument("--out", type=Path, default=ROOT / "docs" / "images")
+    parser.add_argument("--out", type=Path, default=ROOT / "docs" / "images", help="folder of the preview image")
+    parser.add_argument("--gif-out", type=Path, default=ROOT / "build" / "media", help="folder of the animation")
     args = parser.parse_args()
-    make_gif(args.frames, args.rate, args.start, args.end, args.width, args.fps, args.colors, args.out / "showcase.gif")
+    make_gif(args.frames, args.rate, args.start, args.end, args.width, args.fps, args.colors, args.gif_out / "showcase.gif")
     make_preview(args.frames, args.rate, args.preview_at, args.out / "social-preview.png")
 
 
