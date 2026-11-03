@@ -178,8 +178,7 @@ func _ready() -> void:
 func _load_terrain() -> bool:
 	var wanted := str(_options.get("terrain", ""))
 	var candidates: Array = [PACKAGES.get(wanted, wanted)] if wanted != "" else PACKAGES.values()
-	# Without a window nothing is drawn: no layer meshes (the visibility queries read the layer data themselves).
-	terrain.auto_layers = not _options.has("no-layers") and DisplayServer.get_name() != "headless"
+	terrain.auto_layers = not _options.has("no-layers")
 	for p: String in candidates:
 		if p != "" and FileAccess.file_exists(p.path_join("terrain.json")):
 			# The DIS origin is the package origin, so the terrain, JSBSim and DIS share one frame.

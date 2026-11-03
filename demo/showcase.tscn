@@ -87,6 +87,7 @@ autostart = false
 [node name="ReplayManager" type="DisEntityManager" parent="Replay"]
 network_path = NodePath("../ReplayNetwork")
 smoothing_time = 0.3
+smoothing_max_distance = 2000.0
 
 [node name="DisPlayer" type="DisPlayer" parent="Replay"]
 network_path = NodePath("../ReplayNetwork")

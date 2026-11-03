@@ -128,8 +128,7 @@ the autopilot reached waypoints and kept above the terrain, buildings and trees,
 the land units' and the boat's DIS positions (ECEF, converted back with godot-geo `GeoMath`) lie on the ground or the
 water, the line of sight and viewshed answers are plausible, the map holds all units and control measures, and every
 entity is replayed near its live position.
-It uses port 3290 unless `--port` is given, so it does not disturb running demos. Without a window the buildings,
-trees and roads are not drawn; the visibility queries still read their data from the package.
+It uses port 3290 unless `--port` is given, so it does not disturb running demos.
 
 ## Contributing
 See [CONTRIBUTING.md](CONTRIBUTING.md). Participation is governed by the [code of conduct](CODE_OF_CONDUCT.md).
