@@ -37,7 +37,7 @@ python tools/fetch_addons.py --godot <path to the Godot executable>
 - Downloads are cached in `.cache/downloads/` (git-ignored); `--force` unpacks again over existing folders.
 - `--mirror DIR_OR_URL` takes the zips from a folder or another server instead of GitHub (offline machines, or to
   try release candidates before they are published).
-- `addons.json` holds a SHA-256 for each file once the releases exist; a mismatch stops the script.
+- `addons.json` pins the size and SHA-256 of each file; a mismatch removes the download and stops the script.
 
 Without Python: download the five files from the table and unpack them into the project folder so that the paths
 above exist, then run `godot --headless --path . --import` once.
@@ -66,6 +66,7 @@ Contributors who change an add-on use the sibling layout above; submodules can b
 "build everything from source" checkout turns out to be useful.
 
 ## Updating the pins
-When an add-on makes a release: change its `version` and `asset` in `addons.json`, run
-`python tools/fetch_addons.py --force`, put the printed SHA-256 into `addons.json`, run the self-test
+When an add-on makes a release: change its `version` and `asset` in `addons.json` and set `sha256` and `size` to
+`null`, run `python tools/fetch_addons.py --force`, put the printed SHA-256 and the file's size into `addons.json`
+(they must match the release's `SHA256SUMS` where it has one), run the self-test
 (`godot --headless --path . -- --check 480`), and note the change in `CHANGELOG.md`.

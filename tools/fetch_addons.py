@@ -132,6 +132,11 @@ def main() -> int:
                 else:
                     source = URL.format(owner=owner, **pkg)
                 download(source, cached)
+            size = cached.stat().st_size
+            if pkg.get("size") and pkg["size"] != size:
+                cached.unlink()
+                raise RuntimeError(f"size mismatch for {asset} ({size} bytes, expected {pkg['size']}); "
+                                   "the download was removed")
             digest = sha256(cached)
             if pkg.get("sha256") and pkg["sha256"] != digest:
                 cached.unlink()
