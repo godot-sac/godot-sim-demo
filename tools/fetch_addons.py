@@ -74,17 +74,23 @@ def unpack(archive: Path, rel: str) -> None:
             staging = Path(tmp) / "x"
             for name in members:
                 part = PurePosixPath(name[len(prefix):])
-                if part.is_absolute() or ".." in part.parts or ":" in name:
+                # Zip names use "/"; a backslash or drive letter would be a separator on Windows (zip slip).
+                if part.is_absolute() or ".." in part.parts or ":" in name or "\\" in name:
                     raise RuntimeError(f"{archive.name}: unsafe path {name}")
                 out = staging.joinpath(*part.parts)
+                if staging.resolve() not in out.resolve().parents:
+                    raise RuntimeError(f"{archive.name}: unsafe path {name}")
                 out.parent.mkdir(parents=True, exist_ok=True)
                 with z.open(name) as src, out.open("wb") as dst:
                     shutil.copyfileobj(src, dst)
                 mode = (z.getinfo(name).external_attr >> 16) & 0o777
                 if mode & 0o111:
                     out.chmod(mode)
+            # Move the old folder aside first: if a file in it is locked (an open editor holding a library), the
+            # rename fails and the old add-on stays whole instead of half deleted.
+            old = Path(tmp) / "old"
             if target.exists():
-                shutil.rmtree(target)
+                target.replace(old)
             target.parent.mkdir(parents=True, exist_ok=True)
             staging.replace(target)
 
@@ -130,7 +136,11 @@ def main() -> int:
             if pkg.get("sha256") and pkg["sha256"] != digest:
                 cached.unlink()
                 raise RuntimeError(f"checksum mismatch for {asset} (got {digest}); the download was removed")
-            unpack(cached, rel)
+            try:
+                unpack(cached, rel)
+            except zipfile.BadZipFile:
+                cached.unlink()  # not a zip: download it again next time
+                raise
             print(f"{rel} <- {pkg['repo']} {pkg['version']} {asset}"
                   + ("" if pkg.get("sha256") else f" (sha256 {digest})"))
         except (OSError, RuntimeError, zipfile.BadZipFile) as error:

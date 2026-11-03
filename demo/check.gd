@@ -115,6 +115,11 @@ func _end_live() -> void:
 		_report()
 		return
 	player.speed = REPLAY_SPEED
+	# At 16x the entities move hundreds of metres between updates: show each update as it is (no smoothing, so the
+	# replayed position is exact, and no "jumped" warning, which is meant for two simulations sharing an ID).
+	var replay: DisEntityManager = showcase.replay_manager
+	replay.smoothing_time = 0.0
+	replay.smoothing_max_distance = 1.0e6
 
 
 func _check_sight() -> void:

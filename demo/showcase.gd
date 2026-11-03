@@ -29,6 +29,8 @@ extends Node3D
 ## At the end of a run the console gets the frame times (median, 95th and 99th percentile).
 
 const PACKAGES := {"10km": "res://terrain/uskudar_10km", "60km": "res://terrain/uskudar"}
+const OPTIONS := ["port", "terrain", "no-layers", "no-vsync", "time-scale", "record", "replay", "viewshed", "seconds",
+		"screenshot", "tour", "capture", "check", "report"]
 const DEFAULT_RECORDING := "user://showcase.pcapng"
 const SUN_ELEVATION := 28.0
 const SUN_AZIMUTH := 220.0
@@ -45,6 +47,8 @@ const TOUR_END := 44.0
 ## Frames per second of --capture. Real time, not Godot's Movie Maker mode: Movie Maker slows the game down against
 ## the wall clock that DIS timestamps, dead reckoning and the recorder use, so playback would look wrong.
 const CAPTURE_FPS := 15.0
+## Frame times kept for the statistics printed at the end (the latest ones; about 10 minutes at 300 fps).
+const FRAME_HISTORY := 200000
 const HELP := """Tab / Shift+Tab   camera on next / previous unit (UAV first)
 Left drag         orbit                      Wheel   zoom
 [  ]              simulation slower / faster
@@ -105,6 +109,9 @@ var _clearance_clock := 0.0
 
 func _ready() -> void:
 	_options = _parse_args(OS.get_cmdline_user_args())
+	for name: String in _options:
+		if name not in OPTIONS:
+			push_warning("showcase: unknown option --%s (options: --%s)" % [name, ", --".join(OPTIONS)])
 	if _options.has("check"):
 		_check = ShowcaseCheck.new(self, float(_options.check))
 	var port := int(_options.get("port", 3290 if _check else 3000))
@@ -154,7 +161,8 @@ func _ready() -> void:
 
 	set_time_scale(float(_options.get("time-scale", 8.0 if _check else 1.0)))
 	if _options.has("record") or _check:
-		recording_path = str(_options.get("record", "user://showcase_check.pcapng"))
+		# Per port: copies of this project share user://, and parallel checks use different ports.
+		recording_path = str(_options.get("record", "user://showcase_check_%d.pcapng" % port))
 		_start_recording()
 	if _options.has("replay"):
 		recording_path = str(_options.replay)
@@ -177,6 +185,9 @@ func _ready() -> void:
 
 func _load_terrain() -> bool:
 	var wanted := str(_options.get("terrain", ""))
+	if _options.get("terrain") is bool:
+		_fail("--terrain needs a value: 10km, 60km or a package folder")
+		return false
 	var candidates: Array = [PACKAGES.get(wanted, wanted)] if wanted != "" else PACKAGES.values()
 	terrain.auto_layers = not _options.has("no-layers")
 	for p: String in candidates:
@@ -360,6 +371,8 @@ func _process(delta: float) -> void:
 	if map == null:
 		return
 	_frame_ms.append(delta * 1000.0)
+	if _frame_ms.size() > FRAME_HISTORY:  # long unattended runs: keep the latest frames only
+		_frame_ms = _frame_ms.slice(FRAME_HISTORY / 2)
 	if _tour_clock >= 0.0:
 		_advance_tour(delta)
 	if replaying and _quit_at >= 0.0 and player.get_position() >= minf(_quit_at, player.get_duration() - 0.1):
@@ -397,7 +410,7 @@ func _update_hud() -> void:
 	if replaying:
 		lines.append("PLAYBACK  %s / %s  ×%s  %s" % [_clock(player.get_position()), _clock(player.get_duration()),
 				player.speed, "playing" if player.is_playing() else "paused"])
-		lines.append("Recording: %s" % recording_path)
+		lines.append("Recording: %s" % _shown(recording_path))
 		lines.append("Replayed entities: %d (translucent)" % replay_manager.get_entity_count())
 	else:
 		var fdm := aircraft.get_fdm()
@@ -530,7 +543,7 @@ func _start_recording() -> void:
 	if recorder.start(recording_path) == OK:
 		_say("Recording DIS traffic to " + recording_path, recording_path)
 	else:
-		_say("Cannot record to " + recording_path)
+		_say("Cannot record to " + recording_path, recording_path)
 
 
 # --- Playback ------------------------------------------------------------------------------------------------------
@@ -544,7 +557,8 @@ func _enter_replay() -> bool:
 		_say("No recording yet: press R to record, then P to play it back")
 		return false
 	if player.load(recording_path) != OK:
-		_say("Cannot open %s: %s" % [recording_path, player.recording.get_last_error() if player.recording else ""])
+		_say("Cannot open %s: %s" % [recording_path, player.recording.get_last_error() if player.recording else ""],
+				recording_path)
 		return false
 	replaying = true
 	aircraft.paused = true
@@ -646,8 +660,13 @@ func _own_entities() -> Array[DisEntity]:
 func _say(text: String, path := "") -> void:
 	var full := ProjectSettings.globalize_path(path)
 	print(text + ("" if full == path else " (%s)" % full))
-	_message = text
+	_message = text.replace(path, _shown(path)) if path != "" else text
 	_message_until = _now() + 4.0
+
+
+## A path as the screen shows it: Godot paths as they are, other paths by their file name only.
+static func _shown(path: String) -> String:
+	return path if path.begins_with("user://") or path.begins_with("res://") else path.get_file()
 
 
 static func _now() -> float:
@@ -691,6 +710,8 @@ func frame_summary() -> String:
 	var st := frame_stats()
 	if st.frames == 0:
 		return "frames: none"
+	if DisplayServer.get_name() == "headless":
+		return "frames: %d without a window, median %.2f ms" % [st.frames, st.median_ms]
 	var size := get_viewport().get_visible_rect().size
 	return "frames: %d at %dx%d, median %.2f ms (%.0f fps), p95 %.2f ms, p99 %.2f ms, layers %s" % [st.frames,
 			size.x, size.y, st.median_ms, 1000.0 / st.median_ms, st.p95_ms, st.p99_ms,

@@ -56,10 +56,12 @@ func _apply() -> void:
 		heading = atan2(-f.x, -f.z)
 	var dir := Vector3(sin(yaw + heading) * cos(pitch), -sin(pitch), cos(yaw + heading) * cos(pitch))
 	var eye := _center + dir * distance
-	if terrain:  # stay above the ground, buildings and trees
-		var top := ShowcaseScenario.top_at(terrain, eye.x, eye.z)
-		if eye.y < top + 5.0:
-			eye.y = top + 5.0
+	if terrain:  # stay above the ground, and near it above buildings and trees (the tallest is under 400 m)
+		var ground := terrain.height_at(eye.x, eye.z)
+		if not is_nan(ground) and eye.y < ground + 400.0:
+			var top := ShowcaseScenario.top_at(terrain, eye.x, eye.z)
+			if eye.y < top + 5.0:
+				eye.y = top + 5.0
 	global_position = eye
 	if not eye.is_equal_approx(_center):
 		look_at(_center, Vector3.UP)

@@ -16,7 +16,7 @@ Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union
 cover © ESA WorldCover project 2021 (CC BY 4.0). Canopy height: ETH Global Canopy Height 2020, Lang et al. 2023
 (CC BY 4.0). Building heights: GHS-BUILT-H R2023A, European Commission JRC (CC BY 4.0).</sub>
 
-## What it shows
+## Features
 
 | Part | Add-on | In the scene |
 |---|---|---|
@@ -101,17 +101,32 @@ godot-dis 2D demo shows the UAV and the units, and their entities appear here on
 
 ## Demos
 - `demo/showcase.tscn`: the scene above (opened by `demo/main.tscn`).
-- Scenario data (units, route, control measures) is in `demo/scenario.gd`. `tools/probe_heights.gd` prints terrain
-  heights; `tools/probe_route.gd` prints how much of the route the air defence post can see, or scans a grid for
-  post positions (buildings and trees block, as in the scene), for laying out your own scenario.
+- Scenario data (units, route, control measures) is in `demo/scenario.gd`, in scene metres of the terrain package
+  (x east, z south of the package origin; heights come from the terrain). Tools for laying out your own scenario
+  (run with `<godot> --headless --path . -s res://tools/<name>.gd -- ...`):
+  - `latlon.gd`: latitude / longitude to scene metres and back, with the ground height
+    (`-- geo:41.0214,29.0805 xz:3300,-1300`).
+  - `probe_heights.gd`: a coarse grid of terrain heights.
+  - `probe_route.gd`: how much of the route the air defence post can see, leg by leg, or a scan of a grid for post
+    positions (buildings and trees block, as in the scene).
+- Another area needs a terrain package of that area, built with godot-geo's `tools/build_terrain.py`; the scenario
+  positions are then laid out again with the tools above.
 
 ## Documentation
 - [docs/getting-started.md](docs/getting-started.md): from a clean machine to the running showcase.
 - [docs/addons.md](docs/addons.md): where the add-ons come from (release zips or sibling repositories).
 - [docs/media.md](docs/media.md): how the animation and the social preview image are made.
 
-Each add-on documents its own API: godot-dis (`docs/entities.md`, `docs/recording.md`), godot-geo
-(`docs/geo-terrain.md`), godot-jsbsim (`docs/autopilot.md`), godot-milsymbol (`docs/tactical-map.md`).
+Each add-on documents its own API in its repository (the release zips hold the add-on only):
+
+| Add-on | Documentation used by this demo |
+|---|---|
+| godot-dis | [docs/entities.md](https://github.com/OWNER/godot-dis/blob/main/docs/entities.md), [docs/recording.md](https://github.com/OWNER/godot-dis/blob/main/docs/recording.md) |
+| godot-geo | [docs/geo-terrain.md](https://github.com/OWNER/godot-geo/blob/main/docs/geo-terrain.md), [docs/city.md](https://github.com/OWNER/godot-geo/blob/main/docs/city.md) (terrain packages) |
+| godot-jsbsim | [docs/autopilot.md](https://github.com/OWNER/godot-jsbsim/blob/main/docs/autopilot.md) |
+| godot-milsymbol | [docs/tactical-map.md](https://github.com/OWNER/godot-milsymbol/blob/main/docs/tactical-map.md) |
+
+`OWNER` is a placeholder until the repositories are published.
 
 The UAV uses the J3Cub flight model because it is the only aircraft bundled with godot-jsbsim (its licence history
 is clean); the look is a simple UAV model, the performance that of a light aircraft (75 kt, ~2.6 m/s climb).

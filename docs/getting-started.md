@@ -41,8 +41,12 @@ python3 tools/fetch_addons.py --godot <godot>
 ```
 On Windows the Python command is usually `py` instead of `python3`.
 
+> Until the add-on repositories are published, the script stops with a note about the placeholder owner `OWNER`.
+> If you have the release zips in a folder, add `--mirror <folder>` to take them from there.
+
 The script downloads five release files (pinned in `addons.json`), unpacks them into `addons/` and `terrain/`, and
-prints one line per file, for example `addons/dis <- godot-dis 0.1.0 godot-dis-0.1.0.zip`. Then it imports the
+prints one line per file, for example `addons/dis <- godot-dis 0.1.0 godot-dis-0.1.0.zip (sha256 3a8c...)` (the
+checksum is printed while `addons.json` does not pin one yet). Then it imports the
 project once so Godot registers the add-ons: about a hundred lines of Godot's own progress output follow
 (`first_scan_filesystem`, `update_scripts_classes`, `reimport`, `loading_editor_layout`, ...). No window opens. The
 script's last line is `fetch_addons: done, 5 of 5 packages in place`. If a download breaks off, run it again;
@@ -96,7 +100,9 @@ replays the DIS traffic, and checks every add-on's part:
 ```sh
 <godot> --headless --path . -- --check 480
 ```
-The last line starts with `SHOWCASE_CHECK ok` and the exit code is 0 when all checks pass.
+A line starting with `SHOWCASE_CHECK ok` near the end, and exit code 0, mean that all checks passed. The run
+records to `user://showcase_check_<port>.pcapng` and writes its report to `user://showcase_check.json` (`--report`
+chooses another file).
 
 ## 5. See it on the DIS network (optional)
 The demo publishes the UAV and the ground units as DIS Entity State PDUs on multicast `239.1.2.3`, port 3000,

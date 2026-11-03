@@ -87,7 +87,6 @@ autostart = false
 [node name="ReplayManager" type="DisEntityManager" parent="Replay"]
 network_path = NodePath("../ReplayNetwork")
 smoothing_time = 0.3
-smoothing_max_distance = 2000.0
 
 [node name="DisPlayer" type="DisPlayer" parent="Replay"]
 network_path = NodePath("../ReplayNetwork")
@@ -109,15 +108,15 @@ theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
 
 [node name="Banner" type="Label" parent="HUD"]
-anchors_preset = 7
+anchors_preset = 8
 anchor_left = 0.5
-anchor_top = 1.0
+anchor_top = 0.42
 anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -330.0
-offset_top = -230.0
-offset_right = 270.0
-offset_bottom = -176.0
+anchor_bottom = 0.42
+offset_left = -300.0
+offset_top = -27.0
+offset_right = 300.0
+offset_bottom = 27.0
 autowrap_mode = 3
 grow_horizontal = 2
 horizontal_alignment = 1
