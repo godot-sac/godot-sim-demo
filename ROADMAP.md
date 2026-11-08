@@ -10,8 +10,6 @@ godot-milsymbol. It distributes no add-on itself; it pins their releases in `add
   (`tools/link_addons.py`); headless self-test `--check`; getting-started guide.
 
 ## Next
-- Pin the add-on releases' SHA-256 checksums in `addons.json` once they are published.
-- Continuous integration: fetch the release zips and run `--check 480` on Windows and Linux.
 - A UAV flight model of its own in godot-jsbsim to replace the J3Cub stand-in.
 - Fewer overlapping labels on the tactical map where units are close together.
 - Scenario positions in latitude / longitude, so another terrain package needs no manual conversion.

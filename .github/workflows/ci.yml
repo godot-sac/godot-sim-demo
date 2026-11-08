@@ -1,0 +1,60 @@
+# Installs the add-on and terrain release zips pinned in addons.json (tools/fetch_addons.py checks size and SHA-256)
+# and runs the showcase self-test (--check 480: flight, DIS, map, line of sight, recording and playback) headless on
+# Windows and Linux.
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  GODOT_VERSION: 4.7.2
+
+jobs:
+  check:
+    name: Showcase check (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows
+            os: windows-latest
+            godot_zip: Godot_v4.7.2-stable_win64.exe.zip
+            godot_exe: Godot_v4.7.2-stable_win64_console.exe
+          - name: Linux
+            os: ubuntu-22.04
+            godot_zip: Godot_v4.7.2-stable_linux.x86_64.zip
+            godot_exe: Godot_v4.7.2-stable_linux.x86_64
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Download Godot
+        run: |
+          Z="${{ matrix.godot_zip }}"; R="--retry 5 --retry-all-errors --retry-delay 10"; curl -sSfL $R -o godot.zip "https://downloads.godotengine.org/?version=${GODOT_VERSION}&flavor=stable&slug=${Z#Godot_v${GODOT_VERSION}-stable_}" || curl -sSfL $R -o godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/$Z"
+          python -m zipfile -e godot.zip godot_bin
+          chmod +x "godot_bin/${{ matrix.godot_exe }}"
+          echo "GODOT=$PWD/godot_bin/${{ matrix.godot_exe }}" >> "$GITHUB_ENV"
+      - name: Fetch the add-ons and the terrain package
+        run: python tools/fetch_addons.py --godot "$GODOT"
+      - name: Self-test
+        run: |
+          set -o pipefail
+          "$GODOT" --headless --path . -- --check 480 --report check.json 2>&1 | tee check.log
+          # The run must also be free of engine errors and warnings.
+          if grep -E "^(ERROR|WARNING|SCRIPT ERROR)" check.log; then exit 1; fi
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: check-${{ matrix.name }}
+          path: |
+            check.json
+            check.log
