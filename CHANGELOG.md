@@ -4,7 +4,7 @@ All notable changes to this project are documented here. Versions follow [semver
 
 ## [Unreleased]
 
-## [0.1.0]
+## [0.1.0] - 2026-11-08
 First release. Tested with godot-dis, godot-geo, godot-jsbsim and godot-milsymbol 0.1.0 (pinned in `addons.json`)
 and Godot 4.7.2 on Windows 11 and Ubuntu 24.04.
 
