@@ -22,14 +22,12 @@ python tools/fetch_addons.py --godot <path to the Godot executable>
 
 | Package | Release file |
 |---|---|
-| godot-dis | `https://github.com/OWNER/godot-dis/releases/download/v0.1.0/godot-dis-0.1.0.zip` |
-| godot-geo | `https://github.com/OWNER/godot-geo/releases/download/v0.1.0/godot-geo-0.1.0.zip` |
-| godot-jsbsim | `https://github.com/OWNER/godot-jsbsim/releases/download/v0.1.0/godot-jsbsim-0.1.0.zip` |
-| godot-milsymbol | `https://github.com/OWNER/godot-milsymbol/releases/download/v0.1.0/godot-milsymbol-0.1.0.zip` |
-| Üsküdar terrain (10 × 10 km, 21 MB) | `https://github.com/OWNER/godot-geo/releases/download/v0.1.0/godot-geo-terrain-uskudar-10km.zip` |
-| optional, with `--all`: Üsküdar terrain (60 × 60 km, 245 MB) | `https://github.com/OWNER/godot-geo/releases/download/v0.1.0/godot-geo-terrain-uskudar-60km.zip` |
-
-`OWNER` is a placeholder until the repositories are published; until then the script stops and says so.
+| godot-dis | `https://github.com/godot-sac/godot-dis/releases/download/v0.1.0/godot-dis-0.1.0.zip` |
+| godot-geo | `https://github.com/godot-sac/godot-geo/releases/download/v0.1.0/godot-geo-0.1.0.zip` |
+| godot-jsbsim | `https://github.com/godot-sac/godot-jsbsim/releases/download/v0.1.0/godot-jsbsim-0.1.0.zip` |
+| godot-milsymbol | `https://github.com/godot-sac/godot-milsymbol/releases/download/v0.1.0/godot-milsymbol-0.1.0.zip` |
+| Üsküdar terrain (10 × 10 km, 21 MB) | `https://github.com/godot-sac/godot-geo/releases/download/v0.1.0/godot-geo-terrain-uskudar-10km.zip` |
+| optional, with `--all`: Üsküdar terrain (60 × 60 km, 245 MB) | `https://github.com/godot-sac/godot-geo/releases/download/v0.1.0/godot-geo-terrain-uskudar-60km.zip` |
 
 - The add-on zips hold `addons/<name>/` at their root (the Godot Asset Library layout), with the compiled libraries
   for Windows and Linux in the C++ ones. The terrain zips hold `terrain/uskudar_10km/` (or `terrain/uskudar/`)

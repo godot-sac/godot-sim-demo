@@ -36,5 +36,5 @@ and Godot 4.7.2 on Windows 11 and Ubuntu 24.04.
   Maps, ESA WorldCover, ETH canopy height, GHSL) and of SISO-REF-010, milsymbol and JSBSim; the screen shows Godot
   paths or file names only, never local folders.
 
-[Unreleased]: https://github.com/OWNER/godot-sim-demo/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/OWNER/godot-sim-demo/releases/tag/v0.1.0
+[Unreleased]: https://github.com/godot-sac/godot-sim-demo/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/godot-sac/godot-sim-demo/releases/tag/v0.1.0

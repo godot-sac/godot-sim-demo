@@ -31,7 +31,7 @@ In the commands below, replace `<godot>` with the full path of the Godot executa
 ## 1. Clone
 In a terminal, go to the folder that should hold the project, then:
 ```sh
-git clone https://github.com/OWNER/godot-sim-demo.git
+git clone https://github.com/godot-sac/godot-sim-demo.git
 cd godot-sim-demo
 ```
 
@@ -41,8 +41,7 @@ python3 tools/fetch_addons.py --godot <godot>
 ```
 On Windows the Python command is usually `py` instead of `python3`.
 
-> Until the add-on repositories are published, the script stops with a note about the placeholder owner `OWNER`.
-> If you have the release zips in a folder, add `--mirror <folder>` to take them from there.
+> If you already have the release zips in a folder, add `--mirror <folder>` to take them from there.
 
 The script downloads five release files (pinned in `addons.json`), unpacks them into `addons/` and `terrain/`, and
 prints one line per file, for example `addons/dis <- godot-dis 0.1.0 godot-dis-0.1.0.zip` (size and SHA-256 are

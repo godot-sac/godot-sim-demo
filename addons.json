@@ -1,6 +1,6 @@
 {
   "comment": "Add-on and terrain releases this demo is tested with; tools/fetch_addons.py downloads and unpacks them (optional packages only with --all) and checks size and sha256. URL: https://github.com/<owner>/<repo>/releases/download/v<version>/<asset>.",
-  "owner": "OWNER",
+  "owner": "godot-sac",
   "godot": "4.7.2",
   "packages": [
     {"repo": "godot-dis", "version": "0.1.0", "asset": "godot-dis-0.1.0.zip", "path": "addons/dis", "sha256": "7e4e795fb2b97ec44ee706be4535944d954142c7608992004ff2b9e71f392ede", "size": 3796907},

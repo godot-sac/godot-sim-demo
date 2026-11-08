@@ -6,13 +6,14 @@ publishes itself on a DIS network, land units drive on the streets and a patrol 
 shows military symbols and control measures, an air defence post keeps a line of sight on the aircraft past hills
 and buildings, and the DIS traffic is recorded and played back. The units and the exercise are imaginary.
 
-> **Status:** in development, not released yet. It follows the add-ons' v0.1.0 work.
+**Status:** 0.1.0, built on the add-ons' 0.1.0 releases. Tested with Godot 4.7.2 on Windows and Linux; plans in
+[ROADMAP.md](ROADMAP.md). Part of [Godot SAC](https://github.com/godot-sac).
 
 ![Showcase: the UAV over the Bosphorus and Üsküdar, units, the air defence post's line of sight and the tactical map](docs/images/showcase.jpg)
 
 A 28 s animation of the built-in tour (the UAV comes into the post's view, the large map, the post, the recording
 played back) is attached to each release as `showcase.gif`:
-[releases](https://github.com/OWNER/godot-sim-demo/releases).
+[releases](https://github.com/godot-sac/godot-sim-demo/releases).
 
 <sub>Buildings, roads and water © OpenStreetMap contributors, Overture Maps Foundation (ODbL 1.0). Contains modified
 Copernicus Sentinel data 2025. Elevation produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus
@@ -58,7 +59,7 @@ The add-ons and the terrain are not in this repository. [docs/getting-started.md
 through the whole setup; in short:
 
 ```sh
-git clone https://github.com/OWNER/godot-sim-demo.git
+git clone https://github.com/godot-sac/godot-sim-demo.git
 cd godot-sim-demo
 python tools/fetch_addons.py --godot <path to the Godot executable>
 ```
@@ -127,12 +128,10 @@ Each add-on documents its own API in its repository (the release zips hold the a
 
 | Add-on | Documentation used by this demo |
 |---|---|
-| godot-dis | [docs/entities.md](https://github.com/OWNER/godot-dis/blob/main/docs/entities.md), [docs/recording.md](https://github.com/OWNER/godot-dis/blob/main/docs/recording.md) |
-| godot-geo | [docs/geo-terrain.md](https://github.com/OWNER/godot-geo/blob/main/docs/geo-terrain.md), [docs/city.md](https://github.com/OWNER/godot-geo/blob/main/docs/city.md) (terrain packages) |
-| godot-jsbsim | [docs/autopilot.md](https://github.com/OWNER/godot-jsbsim/blob/main/docs/autopilot.md) |
-| godot-milsymbol | [docs/tactical-map.md](https://github.com/OWNER/godot-milsymbol/blob/main/docs/tactical-map.md) |
-
-`OWNER` is a placeholder until the repositories are published.
+| godot-dis | [docs/entities.md](https://github.com/godot-sac/godot-dis/blob/main/docs/entities.md), [docs/recording.md](https://github.com/godot-sac/godot-dis/blob/main/docs/recording.md) |
+| godot-geo | [docs/geo-terrain.md](https://github.com/godot-sac/godot-geo/blob/main/docs/geo-terrain.md), [docs/city.md](https://github.com/godot-sac/godot-geo/blob/main/docs/city.md) (terrain packages) |
+| godot-jsbsim | [docs/autopilot.md](https://github.com/godot-sac/godot-jsbsim/blob/main/docs/autopilot.md) |
+| godot-milsymbol | [docs/tactical-map.md](https://github.com/godot-sac/godot-milsymbol/blob/main/docs/tactical-map.md) |
 
 The UAV uses the J3Cub flight model because it is the only aircraft bundled with godot-jsbsim (its licence history
 is clean); the look is a simple UAV model, the performance that of a light aircraft (75 kt, ~2.6 m/s climb).
