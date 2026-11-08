@@ -11,10 +11,6 @@ and buildings, and the DIS traffic is recorded and played back. The units and th
 
 ![Showcase: the UAV over the Bosphorus and Üsküdar, units, the air defence post's line of sight and the tactical map](docs/images/showcase.jpg)
 
-A 28 s animation of the built-in tour (the UAV comes into the post's view, the large map, the post, the recording
-played back) is attached to each release as `showcase.gif`:
-[releases](https://github.com/godot-sac/godot-sim-demo/releases).
-
 <sub>Buildings, roads and water © OpenStreetMap contributors, Overture Maps Foundation (ODbL 1.0). Contains modified
 Copernicus Sentinel data 2025. Elevation produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus
 Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved. Land
