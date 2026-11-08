@@ -3,11 +3,11 @@
   "owner": "godot-sac",
   "godot": "4.7.2",
   "packages": [
-    {"repo": "godot-dis", "version": "0.1.0", "asset": "godot-dis-0.1.0.zip", "path": "addons/dis", "sha256": "7e4e795fb2b97ec44ee706be4535944d954142c7608992004ff2b9e71f392ede", "size": 3796907},
-    {"repo": "godot-geo", "version": "0.1.0", "asset": "godot-geo-0.1.0.zip", "path": "addons/geo", "sha256": "a0d3542afcaccce7a0755a577ecdf2444b96b370b4b5ed0ed574fc6534640ca2", "size": 8070794},
-    {"repo": "godot-jsbsim", "version": "0.1.0", "asset": "godot-jsbsim-0.1.0.zip", "path": "addons/jsbsim", "sha256": "adde29b3bdaf55bb78794fabb23ee7da36fc10f4974544619b0e51f1407f19eb", "size": 3491634},
+    {"repo": "godot-dis", "version": "0.1.0", "asset": "godot-dis-0.1.0.zip", "path": "addons/dis", "sha256": "11badc62a8a5118a560eb71e8159ba9764336e66b1e3dc8b155b1b27c19f4f9d", "size": 3760022},
+    {"repo": "godot-geo", "version": "0.1.0", "asset": "godot-geo-0.1.0.zip", "path": "addons/geo", "sha256": "e393a049cc876112159e209fefc40e6885c6395d9823b0df7fed7961371c052e", "size": 8070792},
+    {"repo": "godot-jsbsim", "version": "0.1.0", "asset": "godot-jsbsim-0.1.0.zip", "path": "addons/jsbsim", "sha256": "a209dcc2651d321b271a133fecc096d533550a640d8954d58e24584b3c075dbb", "size": 3505280},
     {"repo": "godot-milsymbol", "version": "0.1.0", "asset": "godot-milsymbol-0.1.0.zip", "path": "addons/milsymbol", "sha256": "4146aeac02952fd65d2c3c97adef0d144a3f1e115405b69af155b9511c773d55", "size": 1154665},
-    {"repo": "godot-geo", "version": "0.1.0", "asset": "godot-geo-terrain-uskudar-10km.zip", "path": "terrain/uskudar_10km", "sha256": "aa02004dee921b84a3cd8b3d0ca8675d64e5b0431b08a774fb45a9cdb4bf96b1", "size": 20772621},
-    {"repo": "godot-geo", "version": "0.1.0", "asset": "godot-geo-terrain-uskudar-60km.zip", "path": "terrain/uskudar", "sha256": "83ae2d4f01f6210d7e71130cb7e9ff6a17ce6a6c6f4b04e002eaf7aa33060998", "size": 244410705, "optional": true}
+    {"repo": "godot-geo", "version": "0.1.0", "asset": "godot-geo-terrain-uskudar-10km.zip", "path": "terrain/uskudar_10km", "sha256": "aa948e1ea5b3b537d3a72ddd36ce8cc585750ee53a07c7a10f5e83645867a536", "size": 20758199},
+    {"repo": "godot-geo", "version": "0.1.0", "asset": "godot-geo-terrain-uskudar-60km.zip", "path": "terrain/uskudar", "sha256": "2cfdd26f0f0c23ecd16b170be7771f1bc9fd868a0d01603c46f16b93f401c130", "size": 242377689, "optional": true}
   ]
 }
