@@ -139,7 +139,7 @@ func _ready() -> void:
 	$HUD.add_child(map)
 	map.setup(terrain)
 	for g: Dictionary in ShowcaseScenario.GRAPHICS:
-		map.add_graphic(g.id, g.sidc, g.points, g.amplifiers)
+		map.add_graphic(g.id, g.sidc, ShowcaseScenario.scene_points(terrain, g.points), g.amplifiers)
 	_spawn_units()
 	_spawn_uav()
 	_setup_sight()
@@ -245,7 +245,7 @@ func _spawn_units() -> void:
 	for u: Dictionary in list:
 		var unit := ShowcaseGroundUnit.new()
 		unit.name = u.marking
-		unit.route = PackedVector3Array(u.route)
+		unit.route = ShowcaseScenario.scene_points(terrain, u.route)
 		unit.speed = u.speed
 		unit.distance = u.get("start", 0.0)
 		unit.terrain = terrain
@@ -278,10 +278,9 @@ func _spawn_uav() -> void:
 	aircraft.origin_latitude = origin.latitude
 	aircraft.origin_longitude = origin.longitude
 	aircraft.origin_height = origin.height
-	var start: Vector3 = s.start
-	var g := terrain.global_to_geodetic(Vector3(start.x, route[0].y, start.z))
-	aircraft.latitude = g[0]
-	aircraft.longitude = g[1]
+	var start: Vector2 = s.start  # latitude, longitude
+	aircraft.latitude = start.x
+	aircraft.longitude = start.y
 	aircraft.height = route[0].y
 	aircraft.heading = s.heading
 	aircraft.airspeed = s.speed_kt

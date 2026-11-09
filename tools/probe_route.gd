@@ -16,9 +16,10 @@ func _initialize() -> void:
 	root.add_child(terrain)
 	terrain.package_path = cfg.get("package", "res://terrain/uskudar_10km")
 	await process_frame
-	var plan: Array = ShowcaseScenario.ROUTE
+	var plan := PackedVector3Array()  # empty: the scenario's route
 	if cfg.has("route"):
-		plan = cfg.route.map(func(p: Array) -> Vector3: return Vector3(p[0], 0, p[1]))
+		for p: Array in cfg.route:
+			plan.append(Vector3(p[0], 0, p[1]))
 	var route := ShowcaseScenario.route_points(terrain, plan, cfg.get("agl", ShowcaseScenario.UAV.agl))
 	var samples := _samples(route)
 	var eye_height: float = cfg.get("eye", ShowcaseScenario.AD_EYE_HEIGHT)
@@ -26,7 +27,7 @@ func _initialize() -> void:
 		_scan(terrain, cfg.scan, samples, eye_height, cfg.get("target", [0.3, 0.7]))
 		quit()
 		return
-	var ad := ShowcaseScenario.AD_POSITION
+	var ad := ShowcaseScenario.scene_point(terrain, ShowcaseScenario.AD_POSITION)
 	if cfg.has("ad"):
 		ad = Vector3(cfg.ad[0], 0, cfg.ad[1])
 	var eye := Vector3(ad.x, terrain.height_at(ad.x, ad.z) + eye_height, ad.z)

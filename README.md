@@ -103,8 +103,8 @@ godot-dis 2D demo shows the UAV and the units, and their entities appear here on
 
 ## Demos
 - `demo/showcase.tscn`: the scene above (opened by `demo/main.tscn`).
-- Scenario data (units, route, control measures) is in `demo/scenario.gd`, in scene metres of the terrain package
-  (x east, z south of the package origin; heights come from the terrain). Tools for laying out your own scenario
+- Scenario data (units, route, control measures) is in `demo/scenario.gd`, as WGS84 latitude / longitude; the
+  showcase converts them with the loaded terrain package (heights come from the terrain). Tools for laying out your own scenario
   (run with `<godot> --headless --path . -s res://tools/<name>.gd -- ...`):
   - `latlon.gd`: latitude / longitude to scene metres and back, with the ground height
     (`-- geo:41.0214,29.0805 xz:3300,-1300`).

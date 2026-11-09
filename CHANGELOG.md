@@ -3,6 +3,10 @@
 All notable changes to this project are documented here. Versions follow [semver](https://semver.org/).
 
 ## [Unreleased]
+### Changed
+- Scenario positions (units, UAV route and start, air defence post, control measures) are WGS84 latitude /
+  longitude in `demo/scenario.gd`, converted with the loaded terrain package (`ShowcaseScenario.scene_point()`), so
+  another package of the area needs no manual conversion.
 
 ## [0.1.0] - 2026-11-08
 First release. Tested with godot-dis, godot-geo, godot-jsbsim and godot-milsymbol 0.1.0 (pinned in `addons.json`)
