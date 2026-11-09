@@ -6,6 +6,8 @@ publishes itself on a DIS network, land units drive on the streets and a patrol 
 shows military symbols and control measures, an air defence post keeps a line of sight on the aircraft past hills
 and buildings, and the DIS traffic is recorded and played back. The units and the exercise are imaginary.
 
+[![CI](https://github.com/godot-sac/godot-sim-demo/actions/workflows/ci.yml/badge.svg)](https://github.com/godot-sac/godot-sim-demo/actions/workflows/ci.yml)
+
 **Status:** 0.1.0, built on the add-ons' 0.1.0 releases. Tested with Godot 4.7.2 on Windows and Linux; plans in
 [ROADMAP.md](ROADMAP.md). Part of [Godot SAC](https://github.com/godot-sac).
 
