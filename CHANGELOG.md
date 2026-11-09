@@ -3,6 +3,13 @@
 All notable changes to this project are documented here. Versions follow [semver](https://semver.org/).
 
 ## [Unreleased]
+### Added
+- Export presets (Windows, Linux) and [docs/export.md](docs/export.md): the exported showcase passes `--check 480` on
+  Windows and Linux with the add-ons' release zips and the terrain package next to the executable.
+
+### Fixed
+- The add-on check of `demo/main.tscn` saw no script add-on in an exported game (scripts are remapped there).
+
 ### Changed
 - Scenario positions (units, UAV route and start, air defence post, control measures) are WGS84 latitude /
   longitude in `demo/scenario.gd`, converted with the loaded terrain package (`ShowcaseScenario.scene_point()`), so

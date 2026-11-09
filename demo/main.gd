@@ -16,12 +16,14 @@ const PACKAGES := ["res://terrain/uskudar_10km", "res://terrain/uskudar"]
 func _ready() -> void:
 	var problems := PackedStringArray()
 	for addon: Array in ADDONS:
-		if not FileAccess.file_exists(addon[1]):
+		# Exported games keep scripts as remapped resources, so FileAccess alone does not see them.
+		if not FileAccess.file_exists(addon[1]) and not ResourceLoader.exists(addon[1]):
 			problems.append("%s is missing (%s)" % [addon[0], addon[1].get_base_dir()])
 		elif addon[2] != "" and not ClassDB.class_exists(addon[2]):
 			problems.append("%s is present but its library did not load (build it, or use a release zip)" % addon[0])
 	if not PACKAGES.any(func(p: String) -> bool: return FileAccess.file_exists(p.path_join("terrain.json"))):
-		problems.append("no terrain package in res://terrain/ (uskudar_10km or uskudar)")
+		problems.append("no terrain package in %s (uskudar_10km or uskudar)" % ("terrain/ next to the executable"
+				if OS.has_feature("template") else "res://terrain/"))
 	if problems.is_empty():
 		get_tree().change_scene_to_file.call_deferred(SHOWCASE)
 		return

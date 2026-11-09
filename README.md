@@ -106,8 +106,8 @@ godot-dis 2D demo shows the UAV and the units, and their entities appear here on
 ## Demos
 - `demo/showcase.tscn`: the scene above (opened by `demo/main.tscn`).
 - Scenario data (units, route, control measures) is in `demo/scenario.gd`, as WGS84 latitude / longitude; the
-  showcase converts them with the loaded terrain package (heights come from the terrain). Tools for laying out your own scenario
-  (run with `<godot> --headless --path . -s res://tools/<name>.gd -- ...`):
+  showcase converts them with the loaded terrain package (heights come from the terrain). Tools for laying out your
+  own scenario (run with `<godot> --headless --path . -s res://tools/<name>.gd -- ...`):
   - `latlon.gd`: latitude / longitude to scene metres and back, with the ground height
     (`-- geo:41.0214,29.0805 xz:3300,-1300`).
   - `probe_heights.gd`: a coarse grid of terrain heights.
@@ -119,6 +119,7 @@ godot-dis 2D demo shows the UAV and the units, and their entities appear here on
 ## Documentation
 - [docs/getting-started.md](docs/getting-started.md): from a clean machine to the running showcase.
 - [docs/addons.md](docs/addons.md): where the add-ons come from (release zips or sibling repositories).
+- [docs/export.md](docs/export.md): exporting the showcase as a game (Windows, Linux; tested).
 - [docs/media.md](docs/media.md): how the animation and the social preview image are made.
 - [ROADMAP.md](ROADMAP.md): what is planned next. [CHANGELOG.md](CHANGELOG.md): what changed.
 
